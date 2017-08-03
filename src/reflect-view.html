@@ -1,0 +1,162 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu-light.html">
+<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="eslide/emoji-slide.html">
+<link rel="import" href="eslide/emoji-review.html">
+<link rel="import" href="category-chooser.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="reflect-view">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment">
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      emoji-review {
+        margin-right: 5px;
+      }
+      paper-button{
+        background-color: var(--paper-blue-200);
+      }
+      .edit{
+        margin-left: 5px;
+        font-size: 12px;
+        cursor:pointer;
+        color:#1255a4
+      }
+      paper-icon-button{
+        top:-5px;
+      }
+    </style>
+    <app-location route="{{route}}"></app-location>
+    <div class="card">
+      <div id="header" class="layout horizontal center">
+        <h1>Homework Assignment 1.1</h1>
+        <span style="margin-right:10px;margin-left:10px;">[[state]]</span>
+        <paper-toggle-button checked on-change="_changeState"></paper-toggle-button>
+        <span class="flex"></span>
+        <paper-menu-button>
+          <paper-icon-button icon="my-icons:menu" slot="dropdown-trigger" alt="reflection menu" drawer-toggle></paper-icon-button>
+          <paper-listbox slot="dropdown-content">
+            <paper-item>Student Results</paper-item>
+            <paper-item>Archive Reflection</paper-item>
+          </paper-listbox>
+      </paper-menu-button>
+      </div>
+      <paper-button on-click="_openEditTarget" style="height: 30px;">New Target</paper-button>
+  
+        <!--Maybe not include the time limit and instead make a open or closed toggle-->
+      <div class="layout horizontal center">
+        <h3>Q1 - Adding and subtracting decimals</h3>
+        <p class="layout self-center">
+          <span class="edit" on-click="_openEditTarget">Edit</span>
+        </p>
+      </div>
+      <div class="layout horizontal center">
+        <h3>Q2 - Multiplying whole numbers</h3>
+        <p class="layout self-center">
+          <span class="edit" on-click="_openEditTarget">Edit</span>
+        </p>
+      </div>
+      <div class="layout horizontal center">
+        <h3>Q3 - Use visual fraction models to find the products of fractions</h3>
+        <p class="layout self-center">
+          <span class="edit" on-click="_openEditTarget">Edit</span>
+        </p>
+      </div>
+    </div>
+    <paper-dialog modal 
+      id="editTarget" 
+      style="width:500px;"
+      on-iron-overlay-closed="_editTarget">
+      <category-chooser></category-chooser>
+          <paper-dropdown-menu-light label="Target" style="width:80%;">
+          <paper-listbox slot="dropdown-content" class="dropdown-content">
+            <paper-item>Add and Subtract Decimals</paper-item>
+            <paper-item>Multiply and Divide Whole Numbers with a really long title that will ruin the formating.</paper-item>
+          </paper-listbox>
+            <p> Edit </p>
+        </paper-dropdown-menu-light>
+      <paper-input id="inputName" label="Reference" value="Questions..."></paper-input>
+      <div style="text-align: right;margin-top:0px;" >
+        <paper-button style="color:red" on-click="_archiveWarn">Archive</paper-button>
+      </div>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>OK</paper-button>
+      </div>
+    </paper-dialog>
+  </template>
+
+  <script>
+    class ReflectView extends Polymer.Element {
+      static get is() { return 'reflect-view'; }
+      static get properties(){
+        return {
+          state: {
+            type: String,
+            reflectToAttribute: true,
+            value:'Open',
+            observer: '_pageChanged',
+          },
+        }
+      }
+      _changeState(){
+        if(this.state=="Open"){
+          this.state="Closed";
+        }else{
+          this.state="Open";
+        }
+      }
+      _openEditTarget(){
+        document.body.appendChild(this.$.editTarget);
+            this.$.editTarget.opened = true;
+      }
+      _submit(){
+        console.log("okay!");
+        this.set('route.path','class');
+      }
+      
+    }
+
+    window.customElements.define(ReflectView.is, ReflectView);
+  </script>
+</dom-module>
+
+
+    <!-- <div class="card">
+      Another view with each target as a different card
+
+      <h1>Homework Assignment 1.1</h1>
+      <p>Descriptions</p>
+    </div>
+      <div class=" card layout horizontal">
+        <h3 class="flex">Q1 - Adding and subtracting decimals</h3>
+        <emoji-slide class="horizontal end-justified layout"></emoji-slide>
+      </div>
+      <div class="card layout horizontal">
+        <h3 class="flex">Q2 - Multiplying whole numbers</h3>
+        <emoji-slide class="horizontal end-justified layout"></emoji-slide>
+      </div>
+-->

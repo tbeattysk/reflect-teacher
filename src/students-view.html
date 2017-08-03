@@ -1,0 +1,154 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="students-view">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment">
+      :host {
+        display: block;
+
+        padding: 10px;
+      }
+      .student{
+        /* cursor:pointer; */
+      }
+      .edit{
+        margin-left: 5px;
+        font-size: 12px;
+        cursor:pointer;
+        color:#1255a4
+      }
+      #classCode{
+        color:black;
+        font-size: 16px;
+        margin-left: 5px;
+      }
+      .reflections{
+        margin-left: 10px;
+      }
+      .code{
+        margin-left: 15px;
+      }
+      h3{font-weight:normal;}
+</style>
+<app-location route="{{route}}"></app-location>
+    <div class="card">
+      <h1>Math Roster</h1>
+      <div class="code layout horizontal">
+        <paper-toggle-button checked on-change="_toggleCode" id="codeToggle"></paper-toggle-button>
+        <p>Class Code:<span id="classCode">x43mp</span></p>
+      </div>
+        <!-- TODO: Include moment.js to displat time from now (today, yesterday, 2 weeks ago) -->
+        <div class="reflections">
+          <div class="layout horizontal">
+            <h3 class="student">John Doe</h3>
+            <p class="layout self-center">
+              <span class="edit" on-click="_openEditStudent">Edit</span>
+            </p>
+          </div>
+          <div class="layout horizontal">
+            <h3 class="student">Jane Smith</h3>
+            <p class="layout self-center">
+              <span class="edit" on-click="_openEditStudent">Edit</span>
+            </p>
+          </div>
+          <div class="layout horizontal">
+            <h3 class="student">Mike Meyers</h3>
+            <p class="layout self-center">
+              <span class="edit" on-click="_openEditStudent">Edit</span>
+            </p>
+          </div>
+        </div>
+    </div>
+    
+    <paper-dialog modal 
+      id="editStudent" 
+      style="width:400px;"
+      on-iron-overlay-closed="_editStudent">
+      <paper-input id="inputName" label="Student Name" value="john doe"></paper-input>
+      <div style="text-align: right;margin-top:0px;" >
+        <paper-button style="color:red" on-click="_removeWarn">Remove</paper-button>
+      </div>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>OK</paper-button>
+      </div>
+    </paper-dialog>
+   
+    <paper-dialog modal 
+      role="alertdialog" 
+      id="removeStudent" 
+      style="width:350px;"
+      on-iron-overlay-closed="_removeStudent">
+      <p> Are you sure you want to remove "student name" from "class"?</p>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>OK</paper-button>
+      </div>
+    </paper-dialog>
+  </template>
+
+  <script>
+    class StudentsView extends Polymer.Element {
+      static get is() { return 'students-view'; }
+      _toggleCode(){
+        var self=this;
+        if(!this.$.codeToggle.checked){
+          setTimeout(function() {
+            self.$.classCode.style="text-decoration: line-through; color:gray;";
+          }, 500);
+        }else{
+          setTimeout(function() {
+            self.$.classCode.style="text-decoration: none; color:black;";
+          }, 500);
+        }
+      }
+      _editStudent(){
+        if(this.$.editStudent.closingReason.confirmed){
+          var self=this;
+          setTimeout(function() {
+            console.log('Student name is now: '+self.$.inputName.value);
+          }, 500);
+          
+        }
+      }
+      _removeStudent(){
+        if(this.$.removeStudent.closingReason.confirmed){
+          var self=this;
+          setTimeout(function() {
+            console.log('Student ' +self.$.inputName.value +', has been deleted');
+          }, 500);
+          
+        }
+      }
+      _openEditStudent(){
+        document.body.appendChild(this.$.editStudent);
+            this.$.editStudent.opened = true;
+      }
+      _removeWarn(){
+        this.$.editStudent.opened = false;
+        document.body.appendChild(this.$.removeStudent);
+            this.$.removeStudent.opened = true;
+      }
+    }
+
+    window.customElements.define(StudentsView.is, StudentsView);
+  </script>
+</dom-module>

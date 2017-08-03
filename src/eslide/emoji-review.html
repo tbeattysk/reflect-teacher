@@ -1,0 +1,53 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+
+<dom-module id="emoji-review">
+  <template>
+    <style>
+        .emoji{
+            margin-top: 10px;
+            width: 36px;
+            height: 36px;
+        }
+</style>  
+    <iron-pages selected="[[scale]]">
+        <svg class="emoji" id="sad" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" enable-background="new 0 0 64 64"><path d="M2,32c0,16.6,13.4,30,30,30s30-13.4,30-30S48.6,2,32,2S2,15.4,2,32z" fill="#ffdd67"/><path d="m47.7 37.6c0 8.6 11.7 8.6 11.7 0 0-6.3-5.8-12.4-5.8-12.4s-5.9 6.1-5.9 12.4" fill="#65b1ef"/><g fill="#664e27"><circle cx="38.5" cy="35" r="5"/><circle cx="15.5" cy="35" r="5"/></g><g fill="#917524"><path d="m20.6 19.9c-3.2 2.7-7.5 3.9-11.7 3.1-.6-.1-1.1 2-.4 2.2 4.8.9 9.8-.5 13.5-3.6.5-.5-1-2.1-1.4-1.7"/><path d="m45.1 22.9c-4.2.7-8.5-.4-11.7-3.1-.4-.4-2 1.2-1.4 1.7 3.7 3.2 8.7 4.5 13.5 3.6.7-.2.2-2.3-.4-2.2"/></g><path d="m38.1 47.3c-5.8-1.5-12-.4-16.9 3-1.2.9 1.1 4 2.3 3.2 3.2-2.3 8.4-3.8 13.7-2.4 1.3.3 2.4-3.3.9-3.8" fill="#664e27"/></svg>
+        <svg class="emoji" id="confused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" enable-background="new 0 0 64 64"><path d="m2.5 37.2c2.9 16.3 18.4 27.2 34.8 24.3 16.3-2.9 27.2-18.4 24.3-34.8-2.9-16.2-18.5-27.1-34.8-24.2-16.3 2.8-27.2 18.4-24.3 34.7" fill="#ffdd67"/><g fill="#664e27"><circle cx="42.4" cy="24.7" r="5"/><circle cx="19.7" cy="28.7" r="5"/><path d="m43.3 41.8c-5.8-1.5-12-.4-16.9 3-1.2.9 1.1 4 2.3 3.2 3.2-2.3 8.4-3.8 13.7-2.4 1.3.3 2.4-3.3.9-3.8"/></g></svg>
+        <svg class="emoji" id="neutral" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" enable-background="new 0 0 64 64"><circle cx="32" cy="32" r="30" fill="#ffdd67"/><g fill="#664e27"><circle cx="20.5" cy="27.6" r="5"/><circle cx="43.5" cy="27.6" r="5"/><path d="m38.9 48h-13.8c-1.5 0-1.5-4 0-4h13.7c1.6 0 1.6 4 .1 4"/></g></svg>
+        <svg class="emoji" id="smiling" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" enable-background="new 0 0 64 64"><circle cx="32" cy="32" r="30" fill="#ffdd67"/><g fill="#664e27"><circle cx="20.5" cy="24.6" r="5"/><circle cx="43.5" cy="24.6" r="5"/><path d="m48.1 37c-4.3 6.1-9.5 7.6-16.1 7.6s-11.8-1.5-16.1-7.6c-.6-.8-2.2-.3-1.8.9 2.3 8 10 12.7 18 12.7s15.7-4.7 18-12.7c.2-1.2-1.4-1.7-2-.9"/></g></svg>
+        <svg class="emoji" id="grinning" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" enable-background="new 0 0 64 64"><circle cx="32" cy="32" r="30" fill="#ffdd67"/><path d="m49.7 34.4c-.4-.5-1.1-.4-1.9-.4-15.8 0-15.8 0-31.6 0-.8 0-1.5-.1-1.9.4-3.9 5 .7 19.6 17.7 19.6 17 0 21.6-14.6 17.7-19.6" fill="#664e27"/><path d="m33.8 41.7c-.6 0-1.5.5-1.1 2 .2.7 1.2 1.6 1.2 2.8 0 2.4-3.8 2.4-3.8 0 0-1.2 1-2 1.2-2.8.3-1.4-.6-2-1.1-2-1.6 0-4.1 1.7-4.1 4.6 0 3.2 2.7 5.8 6 5.8 3.3 0 6-2.6 6-5.8-.1-2.8-2.7-4.5-4.3-4.6" fill="#4c3526"/><path d="m24.3 50.7c2.2 1 4.8 1.5 7.7 1.5 2.9 0 5.5-.6 7.7-1.5-2.1-1.1-4.7-1.7-7.7-1.7s-5.6.6-7.7 1.7" fill="#ff717f"/><path d="m47 36c-15 0-15 0-29.9 0-2.1 0-2.1 4-.1 4 10.4 0 19.6 0 30 0 2 0 2-4 0-4" fill="#fff"/><g fill="#664e27"><circle cx="20.5" cy="23" r="5"/><circle cx="43.5" cy="23" r="5"/></g></svg>
+    </iron-selector>
+</template>
+
+  <script>
+    class EmojiReview extends Polymer.Element {
+      static get is() { return 'emoji-review'; }
+
+      static get properties() {
+        return {
+          scale: {
+            type: Number,
+            reflectAttribue: true,
+            notify: false, //no need to fire event when changed
+            value: 2,
+            observer:'_remoji'
+          }
+        };
+      }
+      _remoji(e){
+      }
+    }
+
+    window.customElements.define(EmojiReview.is, EmojiReview);
+  </script>
+</dom-module>

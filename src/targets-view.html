@@ -1,0 +1,193 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu-light.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="category-chooser.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="targets-view">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment">
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      .target{
+        /* cursor:pointer; */
+      }
+      .edit{
+        margin-left: 5px;
+        font-size: 12px;
+        cursor:pointer;
+        color:#1255a4
+      }
+      #classCode{
+        color:black;
+        font-size: 16px;
+        margin-left: 5px;
+      }
+      .reflections{
+        margin-left: 10px;
+      }
+      .code{
+        margin-left: 15px;
+      }
+      h3{font-weight:normal;}
+      paper-item{
+        cursor:pointer;
+      }
+      paper-button{
+        background-color: var(--paper-blue-200);
+      }
+      h1{
+        margin-bottom: 0px;
+      }
+      
+</style>
+<app-location route="{{route}}"></app-location>
+  <div class="card">
+      <h1>Math Targets</h1>
+      <div class="code layout horizontal wrap">
+        <category-chooser edit></category-chooser>
+        <paper-button on-click="_openEditTarget" style="height: 30px;">New Target</paper-button>
+      </div>
+      
+        <!-- TODO: Include moment.js to displat time from now (today, yesterday, 2 weeks ago) -->
+        <div class="reflections">
+          <div class="layout horizontal">
+            <h3 class="target">Adding and subtracting decimals</h3>
+            <p class="layout self-center">
+              <span class="edit" on-click="_openEditTarget">Edit</span>
+            </p>
+          </div>
+          <div class="layout horizontal">
+            <h3 class="target">Multiplying whole numbers</h3>
+            <p class="layout self-center">
+              <span class="edit" on-click="_openEditTarget">Edit</span>
+            </p>
+          </div>
+          <div class="layout horizontal">
+            <h3 class="target">Find greatest common factor and least common multiple of two numbers</h3>
+            <p class="layout self-center">
+              <span class="edit" on-click="_openEditTarget">Edit</span>
+            </p>
+          </div>
+        </div>
+    </div>
+
+    <paper-dialog modal 
+      id="editTarget" 
+      style="width:500px;"
+      on-iron-overlay-closed="_editTarget">
+      <category-chooser edit></category-chooser>
+      <paper-textarea id="inputName" label="Target Title" value="New Target..."></paper-textarea>
+      <div style="text-align: right;margin-top:0px;" >
+        <paper-button style="color:red" on-click="_archiveWarn">Archive</paper-button>
+      </div>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>OK</paper-button>
+      </div>
+    </paper-dialog>
+   
+    <paper-dialog modal 
+      role="alertdialog" 
+      id="archiveTarget" 
+      style="width:350px;"
+      on-iron-overlay-closed="_archiveTarget">
+      <p> Are you sure you want to archive "target name"?</p>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>OK</paper-button>
+      </div>
+    </paper-dialog>
+
+    <paper-dialog modal 
+      id="selectCategory" 
+      style="width:400px;">
+      <h3>Categories</h3>
+      <ul style="margin-left:10px; cursor: pointer;">
+        <li on-click="_openEditCategory" style="color:red">New Category</li>
+        <li on-click="_openEditCategory">The Number System</li>
+        <ul>
+          <li on-click="_openEditCategory" style="color:red">New Subcategory</li>
+          <li on-click="_openEditCategory">Add and subtract decimals</li>
+        </ul>
+        <li on-click="_openEditCategory">Geometry</li>
+      </ul>
+      <div class="buttons">
+        <paper-button dialog-dismiss autofocus>Done</paper-button>
+      </div>
+    </paper-dialog>
+
+    <paper-dialog modal 
+      id="editCategory" 
+      style="width:350px;"
+      on-iron-overlay-closed="_editCategory">
+      <paper-textarea id="inputName" label="Target" value="The Number System"></paper-textarea>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>OK</paper-button>
+      </div>
+    </paper-dialog>
+
+  </template>
+
+  <script>
+    class TargetsView extends Polymer.Element {
+      static get is() { return 'targets-view'; }
+
+      _editTarget(){
+        if(this.$.editTarget.closingReason.confirmed){
+          var self=this;
+          setTimeout(function() {
+            console.log('Target name is now: '+self.$.inputName.value);
+          }, 500);
+          
+        }
+      }
+      _removeTarget(){
+        if(this.$.removeTarget.closingReason.confirmed){
+          var self=this;
+          setTimeout(function() {
+            console.log('Target ' +self.$.inputName.value +', has been deleted');
+          }, 500);
+          
+        }
+      }
+      _openEditTarget(){
+        document.body.appendChild(this.$.editTarget);
+            this.$.editTarget.opened = true;
+      }
+      _archiveWarn(){
+        this.$.editTarget.opened = false;
+        document.body.appendChild(this.$.archiveTarget);
+            this.$.archiveTarget.opened = true;
+      }
+    }
+
+    window.customElements.define(TargetsView.is, TargetsView);
+  </script>
+</dom-module>

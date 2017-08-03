@@ -1,0 +1,73 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/array-selector.html">
+
+<dom-module id="emoji-slide">
+  <template>
+    <array-selector id="selector" items="{{images}}" selected="{{emoji}}"></array-selector>
+    <style>
+      input[type=range] {
+        -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+        background: transparent; /* Otherwise white in Chrome */
+      }
+      input[type=range]:focus {
+        outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+      }
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        display: block;
+        height: 36px;
+        width: 36px;
+        background-image: url('[[emoji]].svg');
+        cursor: pointer;
+        margin-top: -16px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */      }
+      input[type=range]::-webkit-slider-runnable-track {
+        height: 5px;
+        cursor: pointer;
+        background: #999999;
+      }
+      input[type=range]:focus::-webkit-slider-runnable-track {
+        background: #367ebd;
+      }
+    </style>
+    <input id="scale" type="range" max="4" min="0" value="{{value}}" on-input="_remoji"/>
+  </template>
+
+  <script>
+    class EmojiSlide extends Polymer.Element {
+      static get is() { return 'emoji-slide'; }
+
+      static get properties() {
+        return {
+          //This 
+          value: {
+            type: Number,
+            reflectAttribue: true,
+            notify: true, //no need to fire event when changed
+            value: 2,
+            observer:'_remoji'
+          },
+          images:{
+            type: String,
+            value: ['sad','confused','neutral','smiling','grinning'],
+          }
+        };
+      }
+      _remoji(e){
+        this.value = this.$.scale.value;
+        this.$.selector.selectIndex(this.value);
+      }
+    }
+
+    window.customElements.define(EmojiSlide.is, EmojiSlide);
+  </script>
+</dom-module>

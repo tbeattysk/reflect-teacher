@@ -1,0 +1,67 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-app.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">  
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">  
+
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="my-icons.html">
+
+<dom-module id="my-app-login">
+  <template>
+    <style></style>
+    <firebase-auth 
+        id="auth" 
+        user="{{user}}" 
+        status-known="{{statusKnown}}"
+        provider="google">
+    </firebase-auth>
+    <span hidden$="[[!user]]">[[user.displayName]]</span>
+    <paper-menu-button horizontal-align="right" vertical-offset="20">
+      <paper-icon-button icon="my-icons:person" slot="dropdown-trigger" alt="reflection menu"></paper-icon-button>
+      <paper-listbox slot="dropdown-content">
+        <paper-item on-tap="login" hidden$="[[user]]">Log-in</paper-item>
+        <paper-item on-tap="logout" hidden$="[[!user]]">Log-out</paper-item>
+      </paper-listbox>
+    </paper-menu-button>
+  </template>
+
+  <script>
+    class MyAppLogin extends Polymer.Element {
+        static get is() { return 'my-app-login'; }
+        static get properties(){
+            return{ 
+            user:{
+                type: Object,
+            },
+            statusKnown: {
+                type: Object,
+            },
+            presets: Object
+            }
+        }
+        login(){
+            this.$.auth.signInWithRedirect();
+        }
+        logout(){
+                return this.$.auth.signOut();
+            }
+    }
+
+    window.customElements.define(MyAppLogin.is, MyAppLogin);
+  </script>
+</dom-module>

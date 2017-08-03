@@ -1,0 +1,118 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">  
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html"> 
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html"> 
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
+
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="new-class-view">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+
+        padding: 10px;
+      }
+      paper-progress {
+        display: block;
+        width: 100%;
+        margin: 20px 0;
+      }
+      paper-progress.blue {
+        --paper-progress-active-color: var(--paper-light-blue-500);
+        --paper-progress-secondary-color: var(--paper-light-blue-100);
+      }
+    </style>
+
+    <app-location route="{{route}}"></app-location>
+
+    <firebase-auth user={{user}}></firebase-auth>
+    <firebase-document
+      id="teacherPath"
+      path="/users/[[user.uid]]/courses"
+      data={{teacherPath}}>
+    </firebase-document>
+    <firebase-document
+        id="newCourse"
+        path="/users/[[user.uid]]/courses/"
+        limit-to-first='1'
+        data={{newCourseRef}}>
+    </firebase-document>
+
+    <div class="card" id="form">
+      <h1>Create Course</h1>
+      <paper-input id="courseName" always-float-label label="Course Name"></paper-input>
+      <paper-button id="createButton" class="indigo" on-click="_create">Create</paper-button>
+      <paper-progress id="loading" disabled indeterminate class="blue"></paper-progress>
+    </div>
+   
+  </template>
+
+  <script>
+    class NewClassView extends Polymer.Element {
+      static get is() { return 'new-class-view'; }
+      static get properties(){
+        return{
+          teacherCourseRef:Object,
+          newCourseRef:Object
+        }
+      }
+//  
+// TODO: Using a cloud function use this library to make a new class code (based on the number of classes made)
+// http://hashids.org/javascript/
+// 
+      _create(){
+        this.$.createButton.disabled=true;
+        this.$.createButton.disabled=true;
+        this.$.loading.disabled=false;
+        //TO DO: add loading spinner
+        if(this.$.courseName.value){ 
+          this.$.teacherPath.ref.push({
+              update: true,
+              added: {".sv":"timestamp"},
+              title: this.$.courseName.value,
+          }).then(newCourse=>{
+            console.log(newCourse);
+            this.set('route.path','class');
+            self.$.loading.disabled=true;
+            this.$.courseName.value="";
+            this.$.newSwarm.path = `/users/${this.user.uid}/courses/`+newSwarmSnap.key;
+            this.$.newSwarm.initializeStoredValue();
+          })
+        }
+
+          // this.newTeacherCourse = this.$.teacherCourseRef.ref.push({
+          //     
+          // })
+          // .then(newSwarmSnap=>{ //update the path to the new swarm
+          //     this.$.newSwarm.path = `/users/${this.user.uid}/swarms/`+newSwarmSnap.path.o[3];
+          //     this.userSwarmId = newSwarmSnap.path.o[3];
+          //     this.$.newSwarm.initializeStoredValue();
+          // })
+      
+        // 
+        // var self=this;
+        // setTimeout(function() {
+        //   
+        // }, 2500);
+      }
+    }
+
+    window.customElements.define(NewClassView.is, NewClassView);
+  </script>
+</dom-module>
