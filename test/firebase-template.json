@@ -53,6 +53,16 @@
                 },
                 "student2":""
             },
+            "categories":{
+                "categoryCode1":{
+                    "title":"The Number System",
+                    "subcategories":{
+                        "subcategoryCode1":{
+                            "title":"Decimals"
+                        }
+                    }
+                }
+            },
             "targets":{
                 "targetCode1":{
                     "title":"Add and subtract decimals",

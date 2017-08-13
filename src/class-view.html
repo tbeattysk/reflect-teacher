@@ -1,17 +1,13 @@
-<!--
-@license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
-
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
-<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 
 <link rel="import" href="shared-styles.html">
@@ -66,36 +62,75 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         right:0px;
       }
 </style>
-<app-location route="{{route}}"></app-location>
+    <app-location route="{{parentRoute}}"></app-location>
+    <app-route route="{{route}}" 
+      pattern="/:courseid"
+      data={{routeData}}
+      tail="{{subroute}}"></app-route>
+    <firebase-auth user={{user}}></firebase-auth>
+    <firebase-query id="reflections" 
+      path="/courses/[[routeData.courseid]]/reflections" 
+      data={{reflections}}>
+    </firebase-query>  
+    <firebase-document id="courseData" 
+        path="/courses/[[routeData.courseid]]/title" 
+        data={{courseTitle}}>
+    </firebase-document>
+    <!--Add another to get the total students of the class -->
+    
     <div class="card">
-      <h1>Math Reflections</h1>
+      <h1>{{courseTitle}} Reflections</h1>
         <!-- TODO: Include moment.js to displat time from now (today, yesterday, 2 weeks ago) -->
-       <paper-button>New Reflection</paper-button>
+       <paper-button on-click="_openCreateReflection">New Reflection</paper-button>
        
         <div class="reflections">
-          <div class="layout horizontal center">
-            <div class="completion"><span class="num">6</span><p><span class="slash">/</span><span class="den">22</span></p></div>
-            <h3 class="reflect-link" on-click="_goToReflect">Homework assignment 1.3 </h3>
-          </div>
-          <div class="layout horizontal center">
-            <div class="completion"><span class="num">22</span><p><span class="slash">/</span><span class="den">22</span></p></div>
-            <h3 class="reflect-link" on-click="_goToReflect">Homework assignment 1.2 </h3>
-          </div>
-          <div class="layout horizontal center">
-            <div class="completion"><span class="num">21</span><p><span class="slash">/</span><span class="den">22</span></p></div>
-            <h3 class="reflect-link" on-click="_goToReflect">Homework assignment 1.1 </h3>
-          </div>
+          <template is="dom-repeat" items="{{reflections}}" as="reflection" sort="{{_sortReflections()}}">
+            <div class="layout horizontal center">
+              <div class="completion"><span class="num">[[reflection.responses.length]]</span><p><span class="slash">/</span><span class="den">44</span></p></div>
+              <h3 id="[[reflection.$key]]"class="reflect-link" on-click="_goToReflect">[[reflection.title]]</h3>
+            </div>
+          </template>
         </div>
     </div>
+    <paper-dialog modal 
+      id="createReflection" 
+      style="width:400px;"
+      on-iron-overlay-closed="_createReflection">
+      <paper-input focus id="inputTitle" label="Reflection Title"></paper-input>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>Create</paper-button>
+      </div>
+    </paper-dialog>
 
   </template>
 
   <script>
     class ClassView extends Polymer.Element {
       static get is() { return 'class-view'; }
-
-      _goToReflect(){
-        this.set('route.path','reflect');
+      _sortReflections(){
+        // if (a.$key == b.$key) {
+        //   return 0;
+        // }
+        // return a.$key > b.$key ? -1 : 1;
+      }
+      _goToReflect(e){
+        this.set('parentRoute.path',`/reflect/${this.routeData.courseid}/${e.path[0].id}`);
+      }
+      _openCreateReflection(){
+        document.body.appendChild(this.$.createReflection);
+        this.$.createReflection.opened = true;
+      }
+      _createReflection(){
+        if(this.$.createReflection.closingReason.confirmed 
+            && this.$.inputTitle.value!==""){
+          this.$.reflections.ref.push({
+            title: this.$.inputTitle.value,
+            opened: true
+          }).then(snap=>{
+            this.set('parentRoute.path',`/reflect/${this.routeData.courseid}/${snap.key}`);
+          })
+        }
       }
     }
 

@@ -1,62 +1,92 @@
-<!--
-@license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
-<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu-light.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+
 <link rel="import" href="shared-styles.html">
+<link rel="import" href="my-icons.html">
 
 <dom-module id="category-chooser">
   <template>
-    <style include="shared-styles">
+    <style include="shared-styles iron-flex iron-flex-alignment">
       :host {
         display: block;
         padding: 10px;
       }
     </style>
-    <paper-dropdown-menu-light label="Category">
-          <paper-listbox slot="dropdown-content" class="dropdown-content">
-            <paper-item id="all">All</paper-item>
-            <paper-item>Number Systems</paper-item>
-            <paper-item>Geometry</paper-item>
-            <!--TODO: add Dom-if to take out make this element allow edits or not.  -->
-            <paper-item on-click="_openSelectCategory">Edit</paper-item>
-          </paper-listbox>
-        </paper-dropdown-menu-light>
-        <paper-dropdown-menu-light label="Sub-Category">
-          <paper-listbox slot="dropdown-content" class="dropdown-content">
-            <paper-item id="all">All</paper-item>
-            <paper-item>Decimal Operations</paper-item>
-            <paper-item>Fraction Operations</paper-item>
-          </paper-listbox>
-            <p> Edit </p>
-        </paper-dropdown-menu-light>
+
+    <firebase-auth user={{user}}></firebase-auth>
+    <firebase-query id="categories" 
+      path="/courses/[[courseid]]/categories" 
+      data={{categories}}>
+    </firebase-query>
+    <firebase-query id="subcategories" 
+      path="/courses/[[courseid]]/categories/[[category]]/subcategories" 
+      data={{subcategories}}>
+    </firebase-query>
+
+    <paper-dropdown-menu 
+      id="categorySelector"
+      label="Category"
+      on-selected-item-changed="_categoryChosen">
+      <paper-listbox id="categoryList" slot="dropdown-content" attr-for-selected="id" class="dropdown-content">
+          <paper-item id="">[[all]]</paper-item>
+        <template is="dom-repeat" items="[[categories]]" as="category">
+          <paper-item id=[[category.$key]]>[[category.title]]</paper-item>
+        </template>
+        <paper-item on-click="_openSelectCategory" id="edit">Edit</paper-item>
+      </paper-listbox>
+    </paper-dropdown-menu>
     
+    <paper-dropdown-menu 
+      style="display:none"
+      id="subcatSelector"      
+      label="Sub-Category"
+      on-selected-item-changed="_subcategoryChosen">
+      <paper-listbox id="subcatList" slot="dropdown-content" attr-for-selected="id" class="dropdown-content">
+        <paper-item id="" active>[[all]]</paper-item>
+        <template is="dom-repeat" items="[[subcategories]]" as="subcategory">
+          <paper-item id=[[subcategory.$key]]>[[subcategory.title]]</paper-item>
+        </template>
+        <paper-item on-click="_openSelectCategory" id="edit">Edit</paper-item>
+      </paper-listbox>
+    </paper-dropdown-menu>
+
+
     <paper-dialog modal 
       id="selectCategory" 
-      style="width:400px;">
-      <h3>Categories</h3>
-      <ul style="margin-left:10px; cursor: pointer;">
-        <li on-click="_openEditCategory" style="color:red">New Category</li>
-        <li on-click="_openEditCategory">The Number System</li>
-        <ul>
-          <li on-click="_openEditCategory" style="color:red">New Subcategory</li>
-          <li on-click="_openEditCategory">Add and subtract decimals</li>
-        </ul>
-        <li on-click="_openEditCategory">Geometry</li>
-      </ul>
+      style="width:380px; top:100px; height: 360px">
+        <h3>Categories</h3>
+      <paper-dialog-scrollable style="
+      max-width: 375px;
+      height: 250px;
+      overflow:auto;">
+      <ul style="margin-left:10px; max-width:250px; cursor: pointer;">
+          <li on-click="_openEditCategory" style="color:red" id="new">New Category</li>
+        <template is="dom-repeat" items="[[categories]]" as="category">
+          <li on-click="_openEditCategory" id="[[category.$key]]">[[category.title]]</li>
+          <ul id="[[category.$key]]" class="[[category.title]]">
+            <li on-click="_openEditCategory" class="category" style="color:red" id="new[[category.$key]]">New Subcategory</li>
+            <template is="dom-repeat" items="[[arrayify(category.subcategories)]]" as="subcategory">
+              <li on-click="_openEditCategory" class="subcategory" id="[[subcategory.$key]]">[[subcategory.title]]</li>
+            </template></ul>
+        </template></ul>
+      </paper-dialog-scrollable>
       <div class="buttons">
         <paper-button dialog-dismiss autofocus>Done</paper-button>
       </div>
@@ -66,7 +96,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       id="editCategory" 
       style="width:350px;"
       on-iron-overlay-closed="_editCategory">
-      <paper-input id="inputName" label="Target" value="The Number System"></paper-input>
+      <paper-input id="inputTitle" label="Category Title" value="The Number System"></paper-input>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
         <paper-button dialog-confirm autofocus>OK</paper-button>
@@ -77,37 +107,153 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script>
     class CategoryChooser extends Polymer.Element {
       static get is() { return 'category-chooser'; }
-            _openSelectCategory(){
-         document.body.appendChild(this.$.selectCategory);
-            this.$.selectCategory.opened = true;
-      }
+
       static get properties() {
         return {
-          category: {
-            type: String,
-            reflectToAttribute: true
-          },
-          subcategory: {
-            type: String,
-            reflectToAttribute: true
-          },
-          edit:{
+          shownone:{
             type: Boolean,
-            value:false
+            value: false,
+            reflectToAttribute: true,
+          },
+          all:{
+            type:String
+          },
+          courseid:{
+            type: String,
+          },
+          category:{
+            type: String,
+            reflectToAttribute: true,
+            notify: true,
+            value:""
+          },
+          subcategory:{
+            type: String,
+            reflectToAttribute: true,
+            notify: true,
+            value:"",
+           
+          },
+          subcategories:{
+            type:Array,
+          },
+          createNew:{
+            type: Boolean,
+            value: false
           }
         };
       }
-      _openEditCategory(){
-        document.body.appendChild(this.$.editCategory);
-          this.$.editCategory.opened = true;
+      
+      static get observers() {
+        return [
+          '_subcategoriesAvail(category)',
+          '_categoryGiven(category)',
+          '_subcategoryGiven(subcategory)'
+        ];
+      }
+      ready(){
+        super.ready();
+        if(!this.shownone){
+          this.all= "All"
+        }else{
+          this.all="None"
+        }
+      }
+      _categoryGiven(category){
+        this.$.categoryList.selected = category;
+      }
+      _subcategoryGiven(subcategory){
+        this.$.subcatList.selected = subcategory;
+        if(this.subcategory!=""){
+          this.$.subcatSelector.style = "display:all"
+        }
+      }
+      _subcategoriesAvail(e){
+        if(this.category){
+         
+              if(this.subcategories && this.subcategories.length > 0){
+                  this.$.subcatSelector.style = "display:all"
+                }else{
+                  this.$.subcatSelector.style = "display:none"
+                }
+        }
+      }
+      _categoryChosen(e){
+        if(this.$.categorySelector.selectedItem){
+          if(this.$.categorySelector.selectedItem.id=="edit"){
+            this.category="";
+            this.subcategory="";
+          }else{
+            this.category=this.$.categorySelector.selectedItem.id;
+          }
+        }
+      }
+      _subcategoryChosen(e){
+        if(this.$.subcatSelector.selectedItem){
+          if(this.$.subcatSelector.selectedItem.id=="edit"){
+            this.subcategory="";
+          }else{
+            this.subcategory=this.$.subcatSelector.selectedItem.id;
+          }
+        }
+      }
+      _openSelectCategory(){
+        document.body.appendChild(this.$.selectCategory);
+        this.$.selectCategory.opened = true;
+      }
+      _openEditCategory(e){
+          if(e.target.id.substr(0,3)=="new"){ //if we are creating a new category
+            this.$.inputTitle.value = "";
+              if(e.target.id.length>3){
+                this.category=e.target.id.substr(3,e.target.id.length-3);
+              }else{
+                if(this.category){
+                  this.category="";
+                }
+              }
+            this.createNew=true;
+          }else{ //if we are updating an existing category title
+            if(e.target.className=="subcategory"){
+              this.subcategoryTemp = e.target.id;
+              this.categoryTemp = e.target.parentNode.id;
+            }else{
+              this.subcategoryTemp = ""; 
+              this.categoryTemp = e.target.id;
+            }
+            this.$.inputTitle.value = e.target.outerText;
+          }
+          document.body.appendChild(this.$.editCategory);
+            this.$.editCategory.opened = true;
       }
       _editCategory(){
         if(this.$.editCategory.closingReason.confirmed){
-          var self=this;
-          setTimeout(function() {
-            console.log('Category has been updated to: '+self.$.inputCategory.value);
-          }, 500);
+          if(this.createNew){
+            if(!this.category){
+              this.$.categories.ref.push({title:this.$.inputTitle.value});
+            }else{
+              this.$.subcategories.ref.push({title:this.$.inputTitle.value});
+            }
+            this.createNew=false;
+          }else{
+            if(this.subcategoryTemp==""){
+              var update = {};
+              update[`${this.categoryTemp}/title`]=this.$.inputTitle.value;
+              this.$.categories.ref.update(update);
+            }else{
+              var update = {};
+              update[`${this.categoryTemp}/subcategories/${this.subcategoryTemp}/title`]=this.$.inputTitle.value;
+              this.$.categories.ref.update(update);
+            }
+          }
         }
+      }
+      arrayify(obj){
+        if(obj!==undefined){
+          return Object.keys(obj).map(function(v,i){
+            obj[v].$key = Object.keys(obj)[i];
+            return obj[v];}) 
+        }
+        else return[]
       }
     }
 

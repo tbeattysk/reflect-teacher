@@ -1,25 +1,18 @@
-<!--
-@license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
-
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
-
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-app.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+
 <link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
 <link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
 <link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
 <link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
 <link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
 <link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
-<link rel="import" href="../bower_components/app-route/app-location.html">
-<link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 
@@ -38,10 +31,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <dom-module id="my-app">
   <template>
     <style>
-      :host {
+       :host {
         --app-primary-color: #4285f4;
         --app-secondary-color: black;
-
         display: block;
       }
 
@@ -74,71 +66,74 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         color: black;
         font-weight: bold;
       }
-      app-toolbar > p {
+
+      app-toolbar>p {
         font-size: 10px;
         margin-left: 5px;
       }
     </style>
 
     <app-location route="{{route}}"></app-location>
-    <app-route
-        route="{{route}}"
-        pattern="[[rootPattern]]:page"
-        data="{{routeData}}"
-        tail="{{subroute}}"></app-route>
+    <app-route route="{{route}}" pattern="[[rootPattern]]:page" data="{{routeData}}" tail="{{subroute}}"></app-route>
+    <app-route route="{{subroute}}" pattern="/:courseid" data="{{routeCourseData}}"></app-route>
 
-    <firebase-app 
-      id="firebase" 
+    <firebase-app id="firebase" 
       auth-domain="reflect-teacher.firebaseapp.com" 
-      database-url="https://reflect-teacher.firebaseio.com/" 
+      database-url="https://reflect-teacher.firebaseio.com/"
       api-key="AIzaSyBfWUy6UaCfw8z1CcAxquAp2r8A6DqN0CQ">
     </firebase-app>
     <firebase-auth user="{{user}}"></firebase-auth>
-    <firebase-document
-      id="userPresets"
-      path=""
-      data={{presets}}>
+    <firebase-document id="userPresets" path="" data={{presets}}>
     </firebase-document>
+    <firebase-document id="courseData" 
+      path="/courses/{{routeCourseData.courseid}}/title" 
+      data={{courseTitleRaw}}>
+    </firebase-document>
+    <firebase-query id="courses"
+      path="/users/[[user.uid]]/courses"
+      data={{userCourses}}>
+    </firebase-query>
 
     <app-drawer-layout fullbleed>
       <!-- Drawer content -->
       <app-drawer id="drawer" slot="drawer">
-        <app-toolbar>Reflect <p>Teacher / alpha</p></app-toolbar>
-        <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
+        <app-toolbar>Reflect
+          <p>Teacher / alpha</p>
+        </app-toolbar>
+        <iron-selector attr-for-selected="name" class="drawer-list" role="navigation" selectable=".title">
           <a name="welcome" href="welcome">Welcome</a>
-          <a name="math" href="class/math">Math 6</a>
-          <div style="margin-left: 10px;">
-            <a name="students" href="students">Students</a>
-            <a name="targets" href="targets">Targets</a>
-          </div>
-          <a name="science" href="class/science">Science</a>
-          <a name="new-class" href="new-class" style="color:#1255a4">New Course</a>          
+          <template is="dom-repeat" items="[[userCourses]]" as="course">
+            <a name="[[course.courseId]]" class="title" on-click="_selectCourse" href="class/[[course.courseId]]">[[course.title]]</a>
+            <iron-collapse no-animation style="margin-top:-20px; margin-bottom:-20px; margin-left:30px;" on-opened-changed="_collapseCheck" id="[[course.courseId]]" style="margin-left: 10px;">
+              <iron-selector attr-for-selected="name" class="drawer-list" role="navigation" selectable=".link">
+                <a name="class" class="link" href="class/[[course.courseId]]">Reflections</a>
+                <a name="students" class="link" href="students/[[course.courseId]]">Students</a>
+                <a name="targets" class="link" href="targets/[[course.courseId]]">Targets</a>
+              </iron-selector>
+            </iron-collapse>
+          </template>
+          <a name="new-class" href="new-class" style="color:#1255a4">New Class</a>
         </iron-selector>
       </app-drawer>
 
       <!-- Main content -->
       <app-header-layout has-scrolling-region>
-
         <app-header slot="header" condenses reveals effects="waterfall">
           <app-toolbar>
             <paper-icon-button icon="my-icons:menu" drawer-toggle></paper-icon-button>
-            <div main-title>Math 6</div>
+            <div main-title>{{courseTitle}}</div>
             <span class="flex"></span>
             <my-app-login></my-app-login>
           </app-toolbar>
         </app-header>
 
-        <iron-pages
-            selected="[[page]]"
-            attr-for-selected="name"
-            fallback-selection="error"
-            role="main">
+        <iron-pages selected="[[page]]" attr-for-selected="name" fallback-selection="error" role="main">
           <welcome-view name="welcome"></welcome-view>
-          <class-view name="class"></class-view>
-          <reflect-view name="reflect"></reflect-view>
+          <class-view route={{subroute}} name="class"></class-view>
+          <reflect-view route={{subroute}} name="reflect"></reflect-view>
           <new-class-view name="new-class"></new-class-view>
-          <students-view name="students"></students-view>
-          <targets-view name="targets"></targets-view>
+          <students-view route={{subroute}} name="students"></students-view>
+          <targets-view route={{subroute}} name="targets"></targets-view>
           <error-view name="error"></error-view>
         </iron-pages>
       </app-header-layout>
@@ -157,11 +152,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             reflectToAttribute: true,
             observer: '_pageChanged',
           },
+          activeCollapse:{
+            type:String,
+          },
+          collapseList:{
+            type: Object,
+            value:{}
+          },
+          routeCourseData:{
+            type: Object
+          },
+          courseTitle: {
+            type:String 
+          },
+          userCourses:{
+            type:Array,
+            value:[],
+          },
           presets: Object,
           rootPattern: String,
           routeData: Object,
           subroute: String,
-          user:{
+          user: {
             type: Object,
             notify: true
           }
@@ -171,24 +183,46 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       static get observers() {
         return [
           '_routePageChanged(routeData.page)',
-          '_userDataChanged(user)'
+          '_userDataChanged(user)',
+          '_courseTitleFilter(courseTitleRaw)',
         ];
       }
 
       constructor() {
         super();
-
         // Get root pattern for app-route, for more info about `rootPath` see:
         // https://www.polymer-project.org/2.0/docs/upgrade#urls-in-templates
         this.rootPattern = (new URL(this.rootPath)).pathname;
       }
-
+      _collapseCheck(e){
+        this.collapseList[e.path[0].id] = e.path[0];
+        if(this.activeCollapse==undefined && e.path[0].id == this.routeCourseData.courseid){
+          this.activeCollapse = e.path[0];
+          this.activeCollapse.show();
+        }
+      }
+      _courseTitleFilter(courseTitleRaw){
+        if(typeof this.courseTitleRaw == "string"){
+          this.courseTitle=this.courseTitleRaw;
+        }
+      }
       _routePageChanged(page) {
         // Polymer 2.0 will call with `undefined` on initialization.
         // Ignore until we are properly called with a string.
         if (page === undefined) {
           return;
         }
+
+        //Update sidebar class selection
+        if(this.activeCollapse && this.activeCollapse.id != this.routeCourseData.courseid){
+          this.collapseList[this.routeCourseData.courseid].show();
+          this.activeCollapse.hide();
+          this.activeCollapse=this.collapseList[this.routeCourseData.courseid];
+        }
+       //Update sidebar page selection
+       if(this.activeCollapse){
+         this.activeCollapse.children[0].select(page);
+       }
 
         // If no page was found in the route data, page will be an empty string.
         // Deault to 'view1' in that case.
@@ -199,32 +233,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.$.drawer.close();
         }
       }
-      _userDataChanged(user){
-        if(user){
-          this.$.userPresets.path = "/users/"+user.uid+"/presets";
+      _userDataChanged(user) {
+        if (user) {  //only update state if user is logged-in
+          this.$.userPresets.path = "/users/" + user.uid + "/presets";
           return this.$.userPresets.initializeStoredValue()
-          .then(snap =>{
-            if(!this.presets.init){
-              return this.$.userPresets.ref.set({
+            .then(snap => {
+              if (!this.presets.init) {
+                return this.$.userPresets.ref.set({ //initialize user profile
                   init: true,
-              })
-            }
-          })
+                })
+              }
+            })
         }
       }
       _pageChanged(page) {
-        // Load page import on demand. Show 404 page if fails
+        //Load page import on demand. Show 404 page if fails
         var resolvedPageUrl = this.resolveUrl(page + '-view.html');
         Polymer.importHref(
-            resolvedPageUrl,
-            null,
-            this._showPage404.bind(this),
-            true);
+          resolvedPageUrl,
+          null,
+          this._showPage404.bind(this),
+          true);      
       }
-
+      _selectCourse(e){
+        
+      }
+      
       _showPage404() {
-        this.page = 'error';
+        this.page = 'error'; //when 404 given, load error page
       }
+      
     }
 
     window.customElements.define(MyApp.is, MyApp);

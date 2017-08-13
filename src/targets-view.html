@@ -1,25 +1,23 @@
-<!--
-@license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
+
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+
 <link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="../bower_components/app-route/app-route.html">
-<link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu-light.html">
 <link rel="import" href="../bower_components/neon-animation/web-animations.html">
+
 <link rel="import" href="category-chooser.html">
 <link rel="import" href="shared-styles.html">
 
@@ -35,7 +33,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         padding: 10px;
       }
       .target{
-        /* cursor:pointer; */
+        /* cursor:pointer;  when I make a page to display stats*/
       }
       .edit{
         margin-left: 5px;
@@ -66,45 +64,80 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       
 </style>
-<app-location route="{{route}}"></app-location>
+
+<app-route route="{{route}}" 
+  pattern="/:courseid"
+  data={{routeData}}
+  tail="{{subroute}}"></app-route>
+<!-- <app-route route="{{subroute}}" 
+  pattern="/:category"
+  data={{catRouteData}}
+  tail="{{subsubroute}}"></app-route>
+  <app-route route="{{subsubroute}}" 
+  pattern="/:subcategory"
+  data={{subCatRouteData}}></app-route> -->
+
+
+<firebase-auth user={{user}}></firebase-auth>
+<firebase-query id="targets" 
+  path="/courses/[[routeData.courseid]]/targets" 
+  data={{courseTargets}}>
+</firebase-query>
+  
+<firebase-document id="courseData" 
+    path="/courses/[[routeData.courseid]]/title" 
+    data={{courseTitle}}>
+</firebase-document>
+
+<firebase-document id="targetToEdit" 
+    path="/courses/[[routeData.courseid]]/targets/{{targetid}}"
+    data={{targetData}}>
+</firebase-document>
+
+
+  <!--Add query paramater based on assigned category or subcategory -->
+
+
   <div class="card">
-      <h1>Math Targets</h1>
-      <div class="code layout horizontal wrap">
-        <category-chooser edit></category-chooser>
-        <paper-button on-click="_openEditTarget" style="height: 30px;">New Target</paper-button>
-      </div>
-      
+      <h1>{{courseTitle}} Targets</h1>
+        <category-chooser 
+          courseid=[[routeData.courseid]]
+          category={{category}}
+          subcategory={{subcategory}}>
+        </category-chooser>
+        <paper-button on-click="_openNewTarget" style="height: 30px;">New Target</paper-button>
+
         <!-- TODO: Include moment.js to displat time from now (today, yesterday, 2 weeks ago) -->
         <div class="reflections">
+
+        <template id="targetRepeat" is="dom-repeat" items="{{courseTargets}}" as="target" filter="{{_categoryFilter(category,subcategory)}}">
           <div class="layout horizontal">
-            <h3 class="target">Adding and subtracting decimals</h3>
-            <p class="layout self-center">
-              <span class="edit" on-click="_openEditTarget">Edit</span>
+            <h3 class="target" id="[[target.$key]]">[[target.title]]</h3>
+            <p class="layout self-center" id="[[target.title]]">
+              <span on-click="_openEditTarget" class="edit" id="[[target.$key]]" >Edit</span>
             </p>
           </div>
-          <div class="layout horizontal">
-            <h3 class="target">Multiplying whole numbers</h3>
-            <p class="layout self-center">
-              <span class="edit" on-click="_openEditTarget">Edit</span>
-            </p>
-          </div>
-          <div class="layout horizontal">
-            <h3 class="target">Find greatest common factor and least common multiple of two numbers</h3>
-            <p class="layout self-center">
-              <span class="edit" on-click="_openEditTarget">Edit</span>
-            </p>
-          </div>
+        </template>
+
         </div>
     </div>
 
+    <!-- A dialog box to change the name of a target or archive it. -->
+    <!-- TODO: Setup this modal to handle new targets.  -->
+    <div id="dialogs">
     <paper-dialog modal 
       id="editTarget" 
       style="width:500px;"
       on-iron-overlay-closed="_editTarget">
-      <category-chooser edit></category-chooser>
-      <paper-textarea id="inputName" label="Target Title" value="New Target..."></paper-textarea>
-      <div style="text-align: right;margin-top:0px;" >
-        <paper-button style="color:red" on-click="_archiveWarn">Archive</paper-button>
+      <category-chooser shownone
+          id="modalChooser"
+          courseid=[[routeData.courseid]]
+          category={{category}}
+          subcategory={{subcategory}}>
+      </category-chooser>
+      <paper-textarea id="inputName" label="Target Title"></paper-textarea>
+      <div hidden$="[[newTarget]]" style="text-align: right;margin-top:0px;" >
+        <paper-button id="newTarget" style="color:red" on-click="_archiveWarn">Archive</paper-button>
       </div>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
@@ -112,6 +145,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </div>
     </paper-dialog>
    
+    <!-- An alert dialog to ensure the user wants to archive the target. -->
     <paper-dialog modal 
       role="alertdialog" 
       id="archiveTarget" 
@@ -123,68 +157,148 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <paper-button dialog-confirm autofocus>OK</paper-button>
       </div>
     </paper-dialog>
-
-    <paper-dialog modal 
-      id="selectCategory" 
-      style="width:400px;">
-      <h3>Categories</h3>
-      <ul style="margin-left:10px; cursor: pointer;">
-        <li on-click="_openEditCategory" style="color:red">New Category</li>
-        <li on-click="_openEditCategory">The Number System</li>
-        <ul>
-          <li on-click="_openEditCategory" style="color:red">New Subcategory</li>
-          <li on-click="_openEditCategory">Add and subtract decimals</li>
-        </ul>
-        <li on-click="_openEditCategory">Geometry</li>
-      </ul>
-      <div class="buttons">
-        <paper-button dialog-dismiss autofocus>Done</paper-button>
-      </div>
-    </paper-dialog>
-
-    <paper-dialog modal 
-      id="editCategory" 
-      style="width:350px;"
-      on-iron-overlay-closed="_editCategory">
-      <paper-textarea id="inputName" label="Target" value="The Number System"></paper-textarea>
-      <div class="buttons">
-        <paper-button dialog-dismiss>Cancel</paper-button>
-        <paper-button dialog-confirm autofocus>OK</paper-button>
-      </div>
-    </paper-dialog>
-
+    </div>
   </template>
 
   <script>
     class TargetsView extends Polymer.Element {
       static get is() { return 'targets-view'; }
 
-      _editTarget(){
-        if(this.$.editTarget.closingReason.confirmed){
-          var self=this;
-          setTimeout(function() {
-            console.log('Target name is now: '+self.$.inputName.value);
-          }, 500);
-          
+      //todo: get course id from route
+
+      static get properties(){
+        return{
+          route: {
+            type: Object
+          },
+          courseid:{
+            type:String,
+          },
+          category:{
+            type:String,
+            reflectToAttribute: true,
+            notify: true
+          },
+          subcategory:{
+            type:String,
+            reflectToAttribute: true,
+            notify:true
+          },
+          newTarget:{
+            type:Boolean,
+            value:false
+          },
+          targetid:{
+            type:String
+          },
+          targetData:{
+            type:Object,
+            observer:"_targetDataListener"
+          }
+        }
+      }
+
+      static get observers() {
+        return [
+          // '_routePageChanged(routeData.page)',
+          // '_categoryListener(category)'
+        ];
+      }
+      // _categoryListener(sub){
+      // }
+      // _routePageChanged(page){
+      // }
+      
+      //When a target is selected to edit update the category to match.
+
+      _targetDataListener(){
+        if(this.targetData.category){
+          this.category = this.targetData.category;
+          this.subcategory = this.targetData.subcategory;  
+        }
+      }
+      _openEditTarget(e){
+        this.targetid = e.path[0].id;
+        this.$.inputName.value = e.path[0].parentNode.id;
+        document.body.appendChild(this.$.editTarget);
+        this.$.editTarget.opened = true;
+      }
+      _editTarget(e){  
+        if(this.$.editTarget.closingReason.confirmed 
+            && e.target.localName !== "category-chooser"
+            && this.$.inputName.value!==""){
+          if(this.newTarget){
+            this.$.targets.ref.push({
+              title:this.$.inputName.value,
+              category:document.getElementById("modalChooser").category || "",
+              subcategory:document.getElementById("modalChooser").subcategory || ""
+            })
+            this.$.inputName.value = "";
+            this.newTarget = false;
+          }else if(this.targetData){
+            console.log(this.targetid)
+            console.log(this.category)
+            var update = {};
+            update[`${this.targetid}/title`] =this.$.inputName.value
+            update[`${this.targetid}/category`] = this.category || ""
+            update[`${this.targetid}/subcategory`] = this.subcategory || ""
+            this.$.targets.ref.update(update).then(snap=>{
+              var tempcat = this.category;
+              var tempsub = this.subcategory;
+              this.category="";
+              this.subcategory="";
+              this.category = tempcat;
+              this.subcategory= tempsub;
+            });
+          }
+        }
+        if(e.target.localName !== "category-chooser"){
+        this.targetid="";
+        this.$.dialogs.appendChild(this.$.editTarget);
         }
       }
       _removeTarget(){
         if(this.$.removeTarget.closingReason.confirmed){
-          var self=this;
-          setTimeout(function() {
-            console.log('Target ' +self.$.inputName.value +', has been deleted');
-          }, 500);
-          
         }
       }
-      _openEditTarget(){
+      
+      _openNewTarget(){
+        this.newTarget=true
+        this.$.inputName.value = "";
         document.body.appendChild(this.$.editTarget);
-            this.$.editTarget.opened = true;
+        this.$.editTarget.opened = true;
       }
       _archiveWarn(){
         this.$.editTarget.opened = false;
         document.body.appendChild(this.$.archiveTarget);
             this.$.archiveTarget.opened = true;
+      }
+      _categoryFilter(category,subcategory){
+        if (!category) {
+           return function(target){
+            if(!target.archive){
+              return true;
+            }else{
+              return false;
+            }
+          }
+        }else if(subcategory){
+          return function(target){
+            if(!target.archive && target.subcategory==subcategory && target.category == category){
+              return true;
+            }else{
+              return false;
+            }
+          }
+        }else{ 
+          return function(target){
+            if(!target.archive && target.category == category){
+              return true;
+            }else{
+              return false;
+            }
+          }
+        }
       }
     }
 

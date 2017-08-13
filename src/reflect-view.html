@@ -1,26 +1,21 @@
-<!--
-@license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu-light.html">
 <link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
-
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+
 <link rel="import" href="eslide/emoji-slide.html">
 <link rel="import" href="eslide/emoji-review.html">
 <link rel="import" href="category-chooser.html">
@@ -39,6 +34,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       paper-button{
         background-color: var(--paper-blue-200);
       }
+      paper-toggle-button{
+        margin-left: 20px;
+      }
       .edit{
         margin-left: 5px;
         font-size: 12px;
@@ -49,12 +47,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         top:-5px;
       }
     </style>
-    <app-location route="{{route}}"></app-location>
+    <app-route route="{{route}}" 
+      pattern="/:courseid/:reflectionid"
+      data={{routeData}}
+      tail="{{subroute}}"></app-route>
+          
+    <firebase-auth user={{user}}></firebase-auth>
+    <firebase-document id="reflecton" 
+      path="/courses/[[routeData.courseid]]/reflections/[[routeData.reflectionid]]" 
+      data={{reflection}}>
+    </firebase-document>
+    <firebase-document id="targets" 
+      path="/courses/[[routeData.courseid]]/targets" 
+      data={{courseTargets}}>
+    </firebase-document>
+    <firebase-query id="reflectionTargets" 
+      path="/courses/[[routeData.courseid]]/reflections/[[routeData.reflectionid]]/targets" 
+      data={{reflectionTargets}}>
+    </firebase-query>
+
     <div class="card">
       <div id="header" class="layout horizontal center">
-        <h1>Homework Assignment 1.1</h1>
-        <span style="margin-right:10px;margin-left:10px;">[[state]]</span>
-        <paper-toggle-button checked on-change="_changeState"></paper-toggle-button>
+        <h1 on-click="_openEditTitle">[[reflection.title]]</h1>
+        <paper-toggle-button checked="{{reflection.opened}}" on-change="_changeState">[[state]]</paper-toggle-button>
         <span class="flex"></span>
         <paper-menu-button>
           <paper-icon-button icon="my-icons:menu" slot="dropdown-trigger" alt="reflection menu" drawer-toggle></paper-icon-button>
@@ -64,44 +79,55 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </paper-listbox>
       </paper-menu-button>
       </div>
-      <paper-button on-click="_openEditTarget" style="height: 30px;">New Target</paper-button>
+      <paper-button id="new" on-click="_openEditTarget" style="height: 30px;">New Target</paper-button>
   
         <!--Maybe not include the time limit and instead make a open or closed toggle-->
-      <div class="layout horizontal center">
-        <h3>Q1 - Adding and subtracting decimals</h3>
-        <p class="layout self-center">
-          <span class="edit" on-click="_openEditTarget">Edit</span>
-        </p>
-      </div>
-      <div class="layout horizontal center">
-        <h3>Q2 - Multiplying whole numbers</h3>
-        <p class="layout self-center">
-          <span class="edit" on-click="_openEditTarget">Edit</span>
-        </p>
-      </div>
-      <div class="layout horizontal center">
-        <h3>Q3 - Use visual fraction models to find the products of fractions</h3>
-        <p class="layout self-center">
-          <span class="edit" on-click="_openEditTarget">Edit</span>
-        </p>
-      </div>
+      <template id="targetRepeater" is="dom-repeat" items="[[targetData]]" as="target">
+        <div class="layout horizontal center">
+          <h3>[[target.ref]] - [[target.title]]</h3>
+          <p class="layout self-center">
+            <span class="edit" on-click="_openEditTarget" id="[[target.$key]]">Edit</span>
+          </p>
+        </div>
+      </template>
     </div>
+    
     <paper-dialog modal 
       id="editTarget" 
       style="width:500px;"
       on-iron-overlay-closed="_editTarget">
-      <category-chooser></category-chooser>
-          <paper-dropdown-menu-light label="Target" style="width:80%;">
-          <paper-listbox slot="dropdown-content" class="dropdown-content">
-            <paper-item>Add and Subtract Decimals</paper-item>
-            <paper-item>Multiply and Divide Whole Numbers with a really long title that will ruin the formating.</paper-item>
-          </paper-listbox>
-            <p> Edit </p>
-        </paper-dropdown-menu-light>
-      <paper-input id="inputName" label="Reference" value="Questions..."></paper-input>
-      <div style="text-align: right;margin-top:0px;" >
+      
+      <paper-input id="inputRef" label="Reference"></paper-input>
+      <category-chooser shownone
+          id="modalChooser"
+          courseid=[[routeData.courseid]]
+          category={{category}}
+          subcategory={{subcategory}}>
+      </category-chooser>
+      <paper-dropdown-menu-light always-float-label
+        id="selectTarget" 
+        label="Target" 
+        style="width:80%;">
+        <paper-listbox id="targetDropdown" slot="dropdown-content" class="dropdown-content" attr-for-selected="id">
+          <template is="dom-repeat" items="{{arrayify(courseTargets)}}" as="target" filter="{{_categoryFilter(category,subcategory)}}">
+            <paper-item id="[[target.$key]]">[[target.title]]</paper-item>
+          </template>
+        </paper-listbox>
+      </paper-dropdown-menu-light>
+      <!-- <div style="text-align: right;margin-top:0px;" >
         <paper-button style="color:red" on-click="_archiveWarn">Archive</paper-button>
+      </div> -->
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm autofocus>OK</paper-button>
       </div>
+    </paper-dialog>
+    
+    <paper-dialog modal 
+      id="editTitle" 
+      style="width:400px;"
+      on-iron-overlay-closed="_editTitle">
+      <paper-input id="inputName" label="Reflection Title" value="{{reflection.title}}"></paper-input>
       <div class="buttons">
         <paper-button dialog-dismiss>Cancel</paper-button>
         <paper-button dialog-confirm autofocus>OK</paper-button>
@@ -117,27 +143,147 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           state: {
             type: String,
             reflectToAttribute: true,
-            value:'Open',
-            observer: '_pageChanged',
           },
+          reflection:{
+            type: Object,
+            observer:"_changeState"
+          },
+          reflectionTargets:{
+            type: Array,
+            value:[]
+          },
+          targetData:{
+            type: Array,
+            value:[]
+          },
+          courseTargets:{
+            type: Object,
+            value:{}
+          }
         }
+      }
+      static get observers() {
+        return [
+          '_updateTargetTitles(courseTargets)',
+          '_changeReflection(routeData.reflectionid)'
+        ];
+      }
+      ready(){
+        super.ready();
       }
       _changeState(){
-        if(this.state=="Open"){
-          this.state="Closed";
-        }else{
+        if(this.reflection.opened){
           this.state="Open";
+        }else{
+          this.state="Closed";
         }
       }
-      _openEditTarget(){
+      _updateTargetTitles(e){
+        var targets = this.reflectionTargets
+        if(this.reflectionTargets.length>0 && Object.keys(this.courseTargets).length>0){
+          this.targetData = [];
+          for(var i=0;i<this.reflectionTargets.length;i++){
+            this.push('targetData',{
+              $key: this.reflectionTargets[i].$key,
+              title: this.courseTargets[this.reflectionTargets[i].target].title,
+              ref: this.reflectionTargets[i].ref
+            })
+          }
+        }
+      }
+      _changeReflection(){
+        this.targetData = [];
+        
+        //getting duplicate reflection taegets for some reason
+        var uniq = new Set(this.reflectionTargets.map(e => JSON.stringify(e)));
+        this.reflectionTargets = Array.from(uniq).map(e => JSON.parse(e));
+        
+        this._updateTargetTitles();
+      }
+      _openEditTarget(e){
+        if(e.path[0].id=="new"){
+          this.newTarget = true;
+        }else{
+          this.editingTarget = e.path[0].id
+          this.$.inputRef.value = this.reflectionTargets[this.$.targetRepeater.indexForElement(e.path[0])].ref;
+          this.$.targetDropdown.selected = this.reflectionTargets[this.$.targetRepeater.indexForElement(e.path[0])].target;
+          this.$.modalChooser.category = this.courseTargets[this.reflectionTargets[this.$.targetRepeater.indexForElement(e.path[0])].target].category;
+          this.$.modalChooser.subcategory = this.courseTargets[this.reflectionTargets[this.$.targetRepeater.indexForElement(e.path[0])].target].subcategory;
+        }
         document.body.appendChild(this.$.editTarget);
-            this.$.editTarget.opened = true;
+        this.$.editTarget.opened = true;
+      }
+      _editTarget(e){
+        if(this.$.editTarget.closingReason.confirmed 
+            && e.target.id=="editTarget"
+            && this.$.inputRef.value!==""){
+          if(this.newTarget){
+            console.log("creatingNew")
+            this.$.reflectionTargets.ref.push({
+              target: this.$.selectTarget.selectedItem.id,
+              ref: this.$.inputRef.value
+            })
+            this._updateTargetTitles();
+            this.newTarget = false;
+          }else{
+            var update = {};
+            update[`${this.editingTarget}/ref`] =this.$.inputRef.value;
+            update[`${this.editingTarget}/target`] = this.$.selectTarget.selectedItem.id;
+            this.$.reflectionTargets.ref.update(update).then(snap=>{
+              this._updateTargetTitles();
+            })
+
+          }
+        }else if(e.target.id=="editTarget"){
+          this.$.targetDropdown.selected= "";
+          this.$.inputRef.value="";
+          this.$.modalChooser.category="";
+          this.$.modalChooser.subcategory="";
+        }
       }
       _submit(){
         console.log("okay!");
         this.set('route.path','class');
       }
-      
+      _openEditTitle(){
+        document.body.appendChild(this.$.editTitle);
+        this.$.editTitle.opened = true;
+      }
+      _categoryFilter(category,subcategory){
+        if (!category) {
+           return function(target){
+            if(!target.archive){
+              return true;
+            }else{
+              return false;
+            }
+          }
+        }else if(subcategory){
+          return function(target){
+            if(!target.archive && target.subcategory==subcategory && target.category == category){
+              return true;
+            }else{
+              return false;
+            }
+          }
+        }else{ 
+          return function(target){
+            if(!target.archive && target.category == category){
+              return true;
+            }else{
+              return false;
+            }
+          }
+        }
+      }
+      arrayify(obj){
+        if(obj!==undefined){
+          return Object.keys(obj).map(function(v,i){
+            obj[v].$key = Object.keys(obj)[i];
+            return obj[v];}) 
+        }
+        else return[]
+      }
     }
 
     window.customElements.define(ReflectView.is, ReflectView);
