@@ -1,0 +1,207 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="eslide/emoji-slide.html">
+<link rel="import" href="eslide/emoji-review.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="response-view">
+  <template>
+    <style include="shared-styles iron-flex iron-flex-alignment">
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      emoji-review {
+        margin-right: 5px;
+      }
+
+    </style>
+    <app-route route="{{route}}" 
+      pattern="/:courseid/:reflectionid/:studentid"
+      data={{routeData}}
+      tail="{{subroute}}"></app-route>
+      <firebase-auth user={{user}}></firebase-auth>
+
+      <firebase-document id="studentReflection"
+        path="/courses/[[routeData.courseid]]/students/[[routeData.studentid]]/reflections/[[routeData.reflectionid]]"
+        data={{studentReflection}}>
+      </firebase-document>
+      <firebase-document id="reflecton" 
+        path="/courses/[[routeData.courseid]]/reflections/[[routeData.reflectionid]]" 
+        data={{reflection}}>
+      <firebase-document id="targets" 
+        path="/courses/[[routeData.courseid]]/targets" 
+        data={{courseTargets}}>
+      </firebase-document>
+      <firebase-query id="studentList"
+        path="/courses/[[routeData.courseid]]/students"
+        data={{studentList}}
+      ></firebase-query>
+      <!-- TODO: change to an indexed list -->
+    
+    <div >
+      <!--  <div class="complete" hidden$="[[incomplete]]" hidden$="[[!submitted]]" hidden$="[[!dataReady]]"> -->
+      <div class="complete">
+      <div class="card">
+        <h1>[[reflection.title]]</h1>
+        <h3>[[studentName]]</h3>  
+        <template is="dom-repeat" items={{targetData}} as="target">            
+          <div class="layout horizontal center">
+              <emoji-review scale={{target.val}}></emoji-review>
+            <h3>[[target.ref]] - [[target.title]]</h3>
+          </div>
+        </template>
+        <div class="layout horizontal center">
+         <span on-tap="_prevStudent">Previous</span><span class="flex"></span><span on-tap="_nextStudent">Next</span>
+        </div>
+      </div>
+    </template>
+  </div>
+  <script>
+    class ResponseView extends Polymer.Element {
+      static get is() { return 'response-view'; }
+      static get properties() {
+        return {
+          dataReady:{
+            type:Boolean,
+            value: false
+          },
+          submitted:{
+            type:Boolean,
+            value:false
+          },
+          incomplete:{
+            type:Boolean,
+            value:false
+          },
+          reflectionTargets:{
+            type: Array,
+            value:[]
+          },
+          studentReflection:{
+            type: Object,
+            value:{}
+          },
+          reflection:{
+            type: Object,
+            value:{}
+          },
+          courseTargets:{
+            type:Object,
+            value:{}
+          },
+          targetData:{
+            type: Array,
+            value: []
+          },
+          studentName:{
+            type: String,
+            value: ""
+          }
+        };
+      }
+      static get observers() {
+        return [
+          '_updateTargets(courseTargets)',
+          '_updateTargets(reflection)',
+          '_changeReflection(routeData.reflectionid)',
+          '_setStudentData(studentReflection)'
+        ];
+      }
+      // ready(){
+      //   super.ready();
+      //   console.log("re")
+      // }
+      _nextStudent(){
+        console.log(this.studentList)
+      }
+      _prevStudent(){
+        console.log(this.studentList)
+      }
+      
+      _setStudentData(e){
+        this.submitted = e.submitted
+        this._updateTargets();
+      }
+      
+      _updateTargets(){
+        console.log(this.reflection)
+        if(Object.keys(this.reflection).length>0 && Object.keys(this.courseTargets).length>0){
+          this.targetData = [];
+          if(!this.reflection.opened && !this.submitted){
+            this.incomplete = true;
+          }else{this.incomplete = false;}
+          for(var key in this.reflection.targets){
+            console.log(this.studentReflection)
+            this.push('targetData',{
+              $key: key,
+              title: this.courseTargets[this.reflection.targets[key].target].title,
+              ref: this.reflection.targets[key].ref,
+              val: this._getVal(key)
+            })
+          }
+          this.studentList.forEach((e)=>{
+            if(e.$key == this.routeData.studentid){
+              this.studentName = e.userData.studentName;
+            }
+          })
+          //this.studentName = this.studentList[this.routeData.studentid].userData.studentName
+          this.dataReady = true;
+        }
+      }
+      _getVal(key){
+        if(!this.reflection.opened && this.submitted){
+          return null
+        }
+        else if(Object.keys(this.studentReflection).length==0){
+          return 2
+        }else{
+          return this.studentReflection.reflection[key];
+        }
+      }
+
+      _changeReflection(){
+        this.dataReady = false;
+        this.targetData = [];
+          //getting duplicate reflection taegets for some reason
+          // var uniq = new Set(this.reflectionTargets.map(e => JSON.stringify(e)));
+          // this.reflectionTargets = Array.from(uniq).map(e => JSON.parse(e));
+        this._updateTargets();
+      }
+    }
+    window.customElements.define(ResponseView.is, ResponseView);
+  </script>
+</dom-module>
+
+
+    <!-- <div class="card">
+      Another view with each target as a different card
+
+      <h1>Homework Assignment 1.1</h1>
+      <p>Descriptions</p>
+    </div>
+      <div class=" card layout horizontal">
+        <h3 class="flex">Q1 - Adding and subtracting decimals</h3>
+        <emoji-slide class="horizontal end-justified layout"></emoji-slide>
+      </div>
+      <div class="card layout horizontal">
+        <h3 class="flex">Q2 - Multiplying whole numbers</h3>
+        <emoji-slide class="horizontal end-justified layout"></emoji-slide>
+      </div>
+-->

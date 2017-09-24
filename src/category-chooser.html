@@ -1,10 +1,12 @@
 
+<!-- Import services -->
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 
 <link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-document.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-query.html">
 
+<!-- Import components -->
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
@@ -17,9 +19,11 @@
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 
-
+<!-- Import local resourses -->
 <link rel="import" href="shared-styles.html">
 <link rel="import" href="my-icons.html">
+
+<!-- TODO: Subcategory isn't shown after it is created in edit -->
 
 <dom-module id="category-chooser">
   <template>
@@ -43,7 +47,8 @@
     <paper-dropdown-menu 
       id="categorySelector"
       label="Category"
-      on-selected-item-changed="_categoryChosen">
+      on-selected-item-changed="_categoryChosen"
+      on-opened-changed="_resetCategories">
       <paper-listbox id="categoryList" slot="dropdown-content" attr-for-selected="id" class="dropdown-content">
           <paper-item id="">[[all]]</paper-item>
         <template is="dom-repeat" items="[[categories]]" as="category">
@@ -57,7 +62,8 @@
       style="display:none"
       id="subcatSelector"      
       label="Sub-Category"
-      on-selected-item-changed="_subcategoryChosen">
+      on-selected-item-changed="_subcategoryChosen"
+      on-opened-changed="_resetSubcategories">
       <paper-listbox id="subcatList" slot="dropdown-content" attr-for-selected="id" class="dropdown-content">
         <paper-item id="" active>[[all]]</paper-item>
         <template is="dom-repeat" items="[[subcategories]]" as="subcategory">
@@ -67,17 +73,17 @@
       </paper-listbox>
     </paper-dropdown-menu>
 
-
+    <!-- This modal allows for editing of the categories -->
     <paper-dialog modal 
       id="selectCategory" 
-      style="width:380px; top:100px; height: 360px">
-        <h3>Categories</h3>
+      style="width:380px; top:100px; height: 360px" >
+      <h3>Categories</h3>
       <paper-dialog-scrollable style="
       max-width: 375px;
       height: 250px;
       overflow:auto;">
       <ul style="margin-left:10px; max-width:250px; cursor: pointer;">
-          <li on-click="_openEditCategory" style="color:red" id="new">New Category</li>
+        <li on-click="_openEditCategory" style="color:red" id="new">New Category</li>
         <template is="dom-repeat" items="[[categories]]" as="category">
           <li on-click="_openEditCategory" id="[[category.$key]]">[[category.title]]</li>
           <ul id="[[category.$key]]" class="[[category.title]]">
@@ -91,7 +97,7 @@
         <paper-button dialog-dismiss autofocus>Done</paper-button>
       </div>
     </paper-dialog>
-
+    <!-- Confimation for edit of category -->
     <paper-dialog modal 
       id="editCategory" 
       style="width:350px;"
@@ -110,32 +116,30 @@
 
       static get properties() {
         return {
+          // When true user see "None" instead of all, which should be used when users
+          // are creating targets, not for when they are creating targets.
           shownone:{
             type: Boolean,
             value: false,
             reflectToAttribute: true,
           },
-          all:{
-            type:String
-          },
+          //need the course id to load firebase data
           courseid:{
             type: String,
           },
+          //the chosen category, public for databinding
           category:{
             type: String,
             reflectToAttribute: true,
             notify: true,
             value:""
           },
+          //the chosen subcategory, public for databinding
           subcategory:{
             type: String,
             reflectToAttribute: true,
             notify: true,
             value:"",
-           
-          },
-          subcategories:{
-            type:Array,
           },
           createNew:{
             type: Boolean,
@@ -146,9 +150,8 @@
       
       static get observers() {
         return [
-          '_subcategoriesAvail(category)',
           '_categoryGiven(category)',
-          '_subcategoryGiven(subcategory)'
+          '_subcategoryGiven(subcategory)',
         ];
       }
       ready(){
@@ -159,23 +162,35 @@
           this.all="None"
         }
       }
-      _categoryGiven(category){
-        this.$.categoryList.selected = category;
+      _resetCategories(){
+        //getting duplicate reflection taegets for some reason
+        if(this.categories){
+          var uniq = new Set(this.categories.map(e => JSON.stringify(e)));
+          this.categories = Array.from(uniq).map(e => JSON.parse(e));
+        }
+        //this.set('categories',this.category);
       }
-      _subcategoryGiven(subcategory){
-        this.$.subcatList.selected = subcategory;
-        if(this.subcategory!=""){
-          this.$.subcatSelector.style = "display:all"
+      _resetSubcategories(){
+        if(this.categories){
+          var uniq = new Set(this.subcategories.map(e => JSON.stringify(e)));
+          this.subcategories = Array.from(uniq).map(e => JSON.parse(e));
         }
       }
-      _subcategoriesAvail(e){
+      _categoryGiven(category){
+                //getting duplicate categories for some reason
+        this.$.categoryList.selected = category;
         if(this.category){
-         
               if(this.subcategories && this.subcategories.length > 0){
                   this.$.subcatSelector.style = "display:all"
                 }else{
                   this.$.subcatSelector.style = "display:none"
                 }
+        }
+      }
+      _subcategoryGiven(subcategory){
+        this.$.subcatList.selected = subcategory;
+        if(this.subcategory!=""){
+          this.$.subcatSelector.style = "display:all"
         }
       }
       _categoryChosen(e){

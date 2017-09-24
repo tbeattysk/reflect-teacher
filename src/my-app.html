@@ -15,7 +15,7 @@
 <link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
-
+<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
 
 <link rel="import" href="my-icons.html">
 <link rel="import" href="my-app-login.html">
@@ -23,6 +23,7 @@
 
 <link rel="lazy-import" href="class-view.html">
 <link rel="lazy-import" href="reflect-view.html">
+<link rel="lazy-import" href="response-view.html">
 <link rel="lazy-import" href="new-class-view.html">
 <link rel="lazy-import" href="targets-view.html">
 <link rel="lazy-import" href="students-view.html">
@@ -71,6 +72,14 @@
         font-size: 10px;
         margin-left: 5px;
       }
+      paper-progress {
+        display: block;
+        height: 2px;
+        --paper-progress-indeterminate-cycle-duration: 2s;
+        --paper-progress-active-color: var(--app-primary-color);
+        --paper-progress-secondary-color: var(--paper-light-blue-200);
+        width: 100%;
+      }
     </style>
 
     <app-location route="{{route}}"></app-location>
@@ -82,7 +91,7 @@
       database-url="https://reflect-teacher.firebaseio.com/"
       api-key="AIzaSyBfWUy6UaCfw8z1CcAxquAp2r8A6DqN0CQ">
     </firebase-app>
-    <firebase-auth user="{{user}}"></firebase-auth>
+    <firebase-auth id="auth" user="{{user}}" on-double-tap="_checkProgress"></firebase-auth>
     <firebase-document id="userPresets" path="" data={{presets}}>
     </firebase-document>
     <firebase-document id="courseData" 
@@ -91,6 +100,7 @@
     </firebase-document>
     <firebase-query id="courses"
       path="/users/[[user.uid]]/courses"
+      order-by-child="title"
       data={{userCourses}}>
     </firebase-query>
 
@@ -101,8 +111,9 @@
           <p>Teacher / alpha</p>
         </app-toolbar>
         <iron-selector attr-for-selected="name" class="drawer-list" role="navigation" selectable=".title">
-          <a name="welcome" href="welcome">Welcome</a>
+          <a name="welcome" class="title" href="welcome">Welcome</a>
           <template is="dom-repeat" items="[[userCourses]]" as="course">
+            <div>
             <a name="[[course.courseId]]" class="title" on-click="_selectCourse" href="class/[[course.courseId]]">[[course.title]]</a>
             <iron-collapse no-animation style="margin-top:-20px; margin-bottom:-20px; margin-left:30px;" on-opened-changed="_collapseCheck" id="[[course.courseId]]" style="margin-left: 10px;">
               <iron-selector attr-for-selected="name" class="drawer-list" role="navigation" selectable=".link">
@@ -111,6 +122,7 @@
                 <a name="targets" class="link" href="targets/[[course.courseId]]">Targets</a>
               </iron-selector>
             </iron-collapse>
+            <div>
           </template>
           <a name="new-class" href="new-class" style="color:#1255a4">New Class</a>
         </iron-selector>
@@ -124,13 +136,15 @@
             <div main-title>{{courseTitle}}</div>
             <span class="flex"></span>
             <my-app-login></my-app-login>
+            <paper-progress id="progress" class="slow" value="100" indeterminate bottom-item></paper-progress>  
           </app-toolbar>
         </app-header>
-
-        <iron-pages selected="[[page]]" attr-for-selected="name" fallback-selection="error" role="main">
+<!-- http://jsfiddle.net/jtbowden/ykbgT/?utm_source=website&utm_medium=embed&utm_campaign=ykbgT -->
+        <iron-pages id="pages" selected="[[page]]" attr-for-selected="name" fallback-selection="error" role="main">
           <welcome-view name="welcome"></welcome-view>
           <class-view route={{subroute}} name="class"></class-view>
           <reflect-view route={{subroute}} name="reflect"></reflect-view>
+          <response-view route={{subroute}} name="response"></response-view>
           <new-class-view name="new-class"></new-class-view>
           <students-view route={{subroute}} name="students"></students-view>
           <targets-view route={{subroute}} name="targets"></targets-view>
@@ -154,6 +168,7 @@
           },
           activeCollapse:{
             type:String,
+            value:""
           },
           collapseList:{
             type: Object,
@@ -176,6 +191,10 @@
           user: {
             type: Object,
             notify: true
+          },
+          dataReady:{
+            type: Boolean,
+            value: false
           }
         };
       }
@@ -194,14 +213,24 @@
         // https://www.polymer-project.org/2.0/docs/upgrade#urls-in-templates
         this.rootPattern = (new URL(this.rootPath)).pathname;
       }
+      _dataReadyListner(e){
+        if(e.detail.ready){
+          this.$.progress.indeterminate = false
+        }else{
+          this.$.progress.indeterminate = true
+        }
+      }
       _collapseCheck(e){
-        this.collapseList[e.path[0].id] = e.path[0];
-        if(this.activeCollapse==undefined && e.path[0].id == this.routeCourseData.courseid){
-          this.activeCollapse = e.path[0];
-          this.activeCollapse.show();
+        if(e.path[0].id){
+          this.collapseList[e.path[0].id] = e.path[0];
+          if(this.activeCollapse=="" && e.path[0].id == this.routeCourseData.courseid){
+            this.activeCollapse = e.path[0];
+            this.activeCollapse.show();
+          }
         }
       }
       _courseTitleFilter(courseTitleRaw){
+        this.$.progress.indeterminate = false;
         if(typeof this.courseTitleRaw == "string"){
           this.courseTitle=this.courseTitleRaw;
         }
@@ -212,17 +241,43 @@
         if (page === undefined) {
           return;
         }
-
         //Update sidebar class selection
-        if(this.activeCollapse && this.activeCollapse.id != this.routeCourseData.courseid){
-          this.collapseList[this.routeCourseData.courseid].show();
-          this.activeCollapse.hide();
-          this.activeCollapse=this.collapseList[this.routeCourseData.courseid];
+        if(Object.keys(this.collapseList).length>0 && this.activeCollapse.id != this.routeCourseData.courseid){
+          
+          if(this.activeCollapse){
+            this.activeCollapse.hide();
+          }
+          if(!this.collapseList[this.routeCourseData.courseid]){
+            //eventually reset the polyfire here.
+            this.$.courses.destroy().then(()=>{
+            this.$.courses.orderByChild="added";
+            this.$.courses.orderByChild="title";
+            this.collapseList = {};
+            this.activeCollapse = "";
+            console.log(this.userCourses)
+            if(this.userCourses){
+              var uniq = new Set(this.userCourses.map(e => JSON.stringify(e)));
+              this.userCourses = Array.from(uniq).map(e => JSON.parse(e));
+            }
+            this.$.courses.initializeStoredValue().then(()=>{
+              this.activeCollapse = this.collapseList[this.routeCourseData.courseid];
+              this.activeCollapse.show();
+            })
+          })
+          }
+          if(this.collapseList[this.routeCourseData.courseid]){
+            this.collapseList[this.routeCourseData.courseid].show();
+            this.activeCollapse=this.collapseList[this.routeCourseData.courseid];
+          }
         }
-       //Update sidebar page selection
-       if(this.activeCollapse){
-         this.activeCollapse.children[0].select(page);
-       }
+        if(this.activeCollapse && (page =="welcome" || page =="new-class")){
+          this.activeCollapse.hide();
+        }
+        //Update sidebar page selection
+        if(this.activeCollapse){
+          this.activeCollapse.children[0].select(page);
+          this.activeCollapse.show();
+        }
 
         // If no page was found in the route data, page will be an empty string.
         // Deault to 'view1' in that case.
@@ -235,15 +290,18 @@
       }
       _userDataChanged(user) {
         if (user) {  //only update state if user is logged-in
+          this.$.progress.indeterminate = true;
           this.$.userPresets.path = "/users/" + user.uid + "/presets";
           return this.$.userPresets.initializeStoredValue()
             .then(snap => {
               if (!this.presets.init) {
                 return this.$.userPresets.ref.set({ //initialize user profile
                   init: true,
+                  name: user.displayName,
                 })
               }
             })
+        }else{
         }
       }
       _pageChanged(page) {
@@ -258,7 +316,14 @@
       _selectCourse(e){
         
       }
-      
+      _checkProgress(){
+        if(this.$.auth.statusKnown){
+          this.$.progress.indeterminate = false;
+        }
+        else{
+          this.$.progress.indeterminate = true;
+        }
+      }
       _showPage404() {
         this.page = 'error'; //when 404 given, load error page
       }

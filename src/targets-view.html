@@ -98,8 +98,8 @@
   <!--Add query paramater based on assigned category or subcategory -->
 
 
-  <div class="card">
-      <h1>{{courseTitle}} Targets</h1>
+  <div class="card" hidden$="[[!dataReady]]">
+      <h1>Targets</h1>
         <category-chooser 
           courseid=[[routeData.courseid]]
           category={{category}}
@@ -124,6 +124,7 @@
 
     <!-- A dialog box to change the name of a target or archive it. -->
     <!-- TODO: Setup this modal to handle new targets.  -->
+    <!-- TODO: Multi-line target adding -->
     <div id="dialogs">
     <paper-dialog modal 
       id="editTarget" 
@@ -164,7 +165,7 @@
     class TargetsView extends Polymer.Element {
       static get is() { return 'targets-view'; }
 
-      //todo: get course id from route
+      //TODO: get course id from route
 
       static get properties(){
         return{
@@ -194,12 +195,21 @@
           targetData:{
             type:Object,
             observer:"_targetDataListener"
+          },
+          categories:{
+            type:Array,
+            value:[]
+          },
+          dataReady:{
+            type:Boolean,
+            value:false
           }
         }
       }
 
       static get observers() {
         return [
+        '_checkTargets(routeData.courseid)'
           // '_routePageChanged(routeData.page)',
           // '_categoryListener(category)'
         ];
@@ -210,12 +220,22 @@
       // }
       
       //When a target is selected to edit update the category to match.
-
+      _checkTargets(){
+         //getting duplicate reflection taegets for some reason
+        if(this.courseTargets){
+          var uniq = new Set(this.courseTargets.map(e => JSON.stringify(e)));
+          this.courseTargets = Array.from(uniq).map(e => JSON.parse(e));
+        }
+        this.dataReady = true;
+        this.category = "";
+        this.subcategory ="";
+      }
       _targetDataListener(){
         if(this.targetData.category){
           this.category = this.targetData.category;
           this.subcategory = this.targetData.subcategory;  
         }
+        //this.dataReady = true;
       }
       _openEditTarget(e){
         this.targetid = e.path[0].id;
@@ -236,8 +256,6 @@
             this.$.inputName.value = "";
             this.newTarget = false;
           }else if(this.targetData){
-            console.log(this.targetid)
-            console.log(this.category)
             var update = {};
             update[`${this.targetid}/title`] =this.$.inputName.value
             update[`${this.targetid}/category`] = this.category || ""

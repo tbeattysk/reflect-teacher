@@ -67,7 +67,7 @@
       pattern="/:courseid"
       data={{routeData}}
       tail="{{subroute}}"></app-route>
-    <firebase-auth user={{user}}></firebase-auth>
+      
     <firebase-query id="reflections" 
       path="/courses/[[routeData.courseid]]/reflections" 
       data={{reflections}}>
@@ -78,13 +78,13 @@
     </firebase-document>
     <!--Add another to get the total students of the class -->
     
-    <div class="card">
-      <h1>{{courseTitle}} Reflections</h1>
+    <div class="card" hidden$="[[!dataReady]]">
+      <h1>Reflections</h1>
         <!-- TODO: Include moment.js to displat time from now (today, yesterday, 2 weeks ago) -->
        <paper-button on-click="_openCreateReflection">New Reflection</paper-button>
        
         <div class="reflections">
-          <template is="dom-repeat" items="{{reflections}}" as="reflection" sort="{{_sortReflections()}}">
+          <template is="dom-repeat" items="{{reflections}}" as="reflection">
             <div class="layout horizontal center">
               <div class="completion"><span class="num">[[reflection.responses.length]]</span><p><span class="slash">/</span><span class="den">44</span></p></div>
               <h3 id="[[reflection.$key]]"class="reflect-link" on-click="_goToReflect">[[reflection.title]]</h3>
@@ -108,6 +108,24 @@
   <script>
     class ClassView extends Polymer.Element {
       static get is() { return 'class-view'; }
+      static get properties(){
+        return{
+          courseTitle:{
+            type:String,
+            value:undefined,
+            observer:'_changedReflection'
+          },
+          dataReady:{
+            type: Boolean,
+            value: false
+          },
+
+        }
+      }
+      _changedReflection(e){
+          this.dataReady = (typeof e ==='string') ? true : false;
+          this.dispatchEvent(new CustomEvent('dataReady', {bubbles: true, detail: {ready: true}}));
+      }
       _sortReflections(){
         // if (a.$key == b.$key) {
         //   return 0;

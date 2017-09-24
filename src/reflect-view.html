@@ -1,6 +1,7 @@
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-auth.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-document.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-query.html">
@@ -47,6 +48,7 @@
         top:-5px;
       }
     </style>
+    <app-location route="{{parentRoute}}"></app-location>
     <app-route route="{{route}}" 
       pattern="/:courseid/:reflectionid"
       data={{routeData}}
@@ -65,17 +67,22 @@
       path="/courses/[[routeData.courseid]]/reflections/[[routeData.reflectionid]]/targets" 
       data={{reflectionTargets}}>
     </firebase-query>
-
+    <firebase-query id="studentList2"
+      path="/courses/[[routeData.courseid]]/students"
+      data={{studentList2}}
+    ></firebase-query>
+      <!-- TODO: need to index student list of submitted with result summary -->
     <div class="card">
       <div id="header" class="layout horizontal center">
         <h1 on-click="_openEditTitle">[[reflection.title]]</h1>
         <paper-toggle-button checked="{{reflection.opened}}" on-change="_changeState">[[state]]</paper-toggle-button>
         <span class="flex"></span>
-        <paper-menu-button>
+        <paper-menu-button horizontal-align="right">
           <paper-icon-button icon="my-icons:menu" slot="dropdown-trigger" alt="reflection menu" drawer-toggle></paper-icon-button>
           <paper-listbox slot="dropdown-content">
-            <paper-item>Student Results</paper-item>
-            <paper-item>Archive Reflection</paper-item>
+            <template is="dom-repeat" items="[[studentList2]]" as="student">
+              <paper-item id="[[student.$key]]" on-click="_goToResults">[[student.userData.studentName]]</paper-item>
+            </template>
           </paper-listbox>
       </paper-menu-button>
       </div>
@@ -171,6 +178,9 @@
       ready(){
         super.ready();
       }
+      _goToResults(e){
+        this.set('parentRoute.path',`/response/${this.routeData.courseid}/${this.routeData.reflectionid}/${e.path[0].id}/`);
+      }
       _changeState(){
         if(this.reflection.opened){
           this.state="Open";
@@ -179,7 +189,6 @@
         }
       }
       _updateTargetTitles(e){
-        var targets = this.reflectionTargets
         if(this.reflectionTargets.length>0 && Object.keys(this.courseTargets).length>0){
           this.targetData = [];
           for(var i=0;i<this.reflectionTargets.length;i++){
@@ -193,11 +202,10 @@
       }
       _changeReflection(){
         this.targetData = [];
-        
         //getting duplicate reflection taegets for some reason
         var uniq = new Set(this.reflectionTargets.map(e => JSON.stringify(e)));
         this.reflectionTargets = Array.from(uniq).map(e => JSON.parse(e));
-        
+
         this._updateTargetTitles();
       }
       _openEditTarget(e){

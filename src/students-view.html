@@ -57,20 +57,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       pattern="/:courseid"
       data={{routeData}}
       tail="{{subroute}}"></app-route>
+    <firebase-query id="studentData" 
+      path="/courses/[[routeData.courseid]]/students" 
+      data={{students}}>
+    </firebase-query>
     <firebase-document id="rosterData" 
       path="/courses/[[routeData.courseid]]/rosterData" 
       data={{rosterData}}>
     </firebase-document>
-    <firebase-query id="students" 
-      path="/students/[[routeData.courseid]]" 
-      data={{students}}>
-    </firebase-query>
     <firebase-document id="courseData" 
         path="/courses/[[routeData.courseid]]/title" 
         data={{courseTitle}}>
     </firebase-document>
     <div class="card">
-      <h1>{{courseTitle}} Roster</h1>
+      <h1>Roster</h1>
       <div class="code layout horizontal">
         <paper-toggle-button checked={{rosterData.opened}} on-change="_toggleCode" id="codeToggle"></paper-toggle-button>
         <p>Class Code:<span id="classCode">[[rosterData.classCode]]</span></p>
@@ -79,24 +79,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <div class="reflections">
           <template is="dom-repeat" items="[[students]]" as="student">
             <div class="layout horizontal">
-              <h3 class="student">[[student.name]]</h3>
+              <h3 class="student">[[student.userData.studentName]]</h3>
               <p class="layout self-center">
                 <span class="edit" id=[[student.$key]] on-click="_openEditStudent">Edit</span>
               </p>
             </div>
           </template>
-          <div class="layout horizontal">
-            <h3 class="student">Jane Smith</h3>
-            <p class="layout self-center">
-              <span class="edit" on-click="_openEditStudent">Edit</span>
-            </p>
-          </div>
-          <div class="layout horizontal">
-            <h3 class="student">Mike Meyers</h3>
-            <p class="layout self-center">
-              <span class="edit" on-click="_openEditStudent">Edit</span>
-            </p>
-          </div>
         </div>
     </div>
     
