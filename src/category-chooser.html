@@ -47,8 +47,7 @@
     <paper-dropdown-menu 
       id="categorySelector"
       label="Category"
-      on-selected-item-changed="_categoryChosen"
-      on-opened-changed="_resetCategories">
+      on-selected-item-changed="_categoryChosen">
       <paper-listbox id="categoryList" slot="dropdown-content" attr-for-selected="id" class="dropdown-content">
           <paper-item id="">[[all]]</paper-item>
         <template is="dom-repeat" items="[[categories]]" as="category">
@@ -62,8 +61,7 @@
       style="display:none"
       id="subcatSelector"      
       label="Sub-Category"
-      on-selected-item-changed="_subcategoryChosen"
-      on-opened-changed="_resetSubcategories">
+      on-selected-item-changed="_subcategoryChosen">
       <paper-listbox id="subcatList" slot="dropdown-content" attr-for-selected="id" class="dropdown-content">
         <paper-item id="" active>[[all]]</paper-item>
         <template is="dom-repeat" items="[[subcategories]]" as="subcategory">
@@ -141,6 +139,7 @@
             notify: true,
             value:"",
           },
+          //the same model is used for making new categories as is used for editing
           createNew:{
             type: Boolean,
             value: false
@@ -150,8 +149,8 @@
       
       static get observers() {
         return [
-          '_categoryGiven(category)',
-          '_subcategoryGiven(subcategory)',
+          '_categoryGiven(category)', //observer for when category is pushed from parent element
+          '_subcategoryGiven(subcategory)', //wating for when subcategory is pushed from parent element
         ];
       }
       ready(){
@@ -162,37 +161,27 @@
           this.all="None"
         }
       }
-      _resetCategories(){
-        //getting duplicate reflection taegets for some reason
-        if(this.categories){
-          var uniq = new Set(this.categories.map(e => JSON.stringify(e)));
-          this.categories = Array.from(uniq).map(e => JSON.parse(e));
-        }
-        //this.set('categories',this.category);
-      }
-      _resetSubcategories(){
-        if(this.categories){
-          var uniq = new Set(this.subcategories.map(e => JSON.stringify(e)));
-          this.subcategories = Array.from(uniq).map(e => JSON.parse(e));
-        }
-      }
+      //If the category is given by parent, change the item selected in the list
       _categoryGiven(category){
-                //getting duplicate categories for some reason
         this.$.categoryList.selected = category;
         if(this.category){
-              if(this.subcategories && this.subcategories.length > 0){
-                  this.$.subcatSelector.style = "display:all"
-                }else{
-                  this.$.subcatSelector.style = "display:none"
-                }
+          if(this.subcategories && this.subcategories.length > 0){
+            this.$.subcatSelector.style = "display:all"
+          }else{
+            this.$.subcatSelector.style = "display:none"
+          }
         }
       }
+      //If the subcategory is given by parent, change the item selected in the list
       _subcategoryGiven(subcategory){
         this.$.subcatList.selected = subcategory;
         if(this.subcategory!=""){
           this.$.subcatSelector.style = "display:all"
         }
       }
+      //When a category is chosen from the list, publish the selected category through attribute
+      //If the user wishes to edit categories, reset all selections and open edit module.
+      // TODO: Open the module here instead of declaritavely.
       _categoryChosen(e){
         if(this.$.categorySelector.selectedItem){
           if(this.$.categorySelector.selectedItem.id=="edit"){
@@ -203,6 +192,9 @@
           }
         }
       }
+      //When a subcategory is chosen from the list, publish the selected subcategory through attribute
+      //If the user wishes to edit categories, reset all selections and open edit module.
+      // TODO: Open the module here instead of declaritavely.
       _subcategoryChosen(e){
         if(this.$.subcatSelector.selectedItem){
           if(this.$.subcatSelector.selectedItem.id=="edit"){
@@ -212,22 +204,26 @@
           }
         }
       }
+      //This opens the dialog bax that allows the editing of categories.
       _openSelectCategory(){
-        document.body.appendChild(this.$.selectCategory);
+        document.body.appendChild(this.$.selectCategory);// move the dialog to body root so that it can display above all elements
         this.$.selectCategory.opened = true;
       }
+      // When the user either wishes to edit or create a new (sub)category, open the edit dialog
       _openEditCategory(e){
-          if(e.target.id.substr(0,3)=="new"){ //if we are creating a new category
+        //if we are creating a new category ensure all fields are blank expcept for category if adding subcategory
+          if(e.target.id.substr(0,3)=="new"){ 
             this.$.inputTitle.value = "";
-              if(e.target.id.length>3){
+              if(e.target.id.length>3){ //subcategories will have "new" followed by the category id
                 this.category=e.target.id.substr(3,e.target.id.length-3);
               }else{
                 if(this.category){
                   this.category="";
                 }
               }
-            this.createNew=true;
+            this.createNew=true; //flag for the submit button to know if the data is new or not
           }else{ //if we are updating an existing category title
+            this.createNew=false;
             if(e.target.className=="subcategory"){
               this.subcategoryTemp = e.target.id;
               this.categoryTemp = e.target.parentNode.id;
@@ -238,9 +234,11 @@
             this.$.inputTitle.value = e.target.outerText;
           }
           document.body.appendChild(this.$.editCategory);
-            this.$.editCategory.opened = true;
+          this.$.editCategory.opened = true;
       }
+      //when a cateogy is new or edited, do the following.
       _editCategory(){
+        //make sure the dialog was closed with confirmation not a cancel
         if(this.$.editCategory.closingReason.confirmed){
           if(this.createNew){
             if(!this.category){
@@ -262,6 +260,7 @@
           }
         }
       }
+      //used to make an array for the subcategories
       arrayify(obj){
         if(obj!==undefined){
           return Object.keys(obj).map(function(v,i){

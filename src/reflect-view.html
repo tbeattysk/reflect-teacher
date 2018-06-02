@@ -67,9 +67,9 @@
       path="/courses/[[routeData.courseid]]/reflections/[[routeData.reflectionid]]/targets" 
       data={{reflectionTargets}}>
     </firebase-query>
-    <firebase-query id="studentList2"
+    <firebase-query id="studentList"
       path="/courses/[[routeData.courseid]]/students"
-      data={{studentList2}}
+      data={{studentList}}
     ></firebase-query>
       <!-- TODO: need to index student list of submitted with result summary -->
     <div class="card">
@@ -80,7 +80,7 @@
         <paper-menu-button horizontal-align="right">
           <paper-icon-button icon="my-icons:menu" slot="dropdown-trigger" alt="reflection menu" drawer-toggle></paper-icon-button>
           <paper-listbox slot="dropdown-content">
-            <template is="dom-repeat" items="[[studentList2]]" as="student">
+            <template is="dom-repeat" items="[[studentList]]" as="student">
               <paper-item id="[[student.$key]]" on-click="_goToResults">[[student.userData.studentName]]</paper-item>
             </template>
           </paper-listbox>

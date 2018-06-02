@@ -21,6 +21,7 @@
 <link rel="import" href="my-app-login.html">
 <link rel="lazy-import" href="welcome-view.html">
 
+<!-- TODO: Learn how to load these resources on a timer rather than as needed -->
 <link rel="lazy-import" href="class-view.html">
 <link rel="lazy-import" href="reflect-view.html">
 <link rel="lazy-import" href="response-view.html">
@@ -81,19 +82,19 @@
         width: 100%;
       }
     </style>
-
+    <!-- TODO: Should only have one app-route element pattern should be [[rootPattern]]:page/:courseid-->
     <app-location route="{{route}}"></app-location>
     <app-route route="{{route}}" pattern="[[rootPattern]]:page" data="{{routeData}}" tail="{{subroute}}"></app-route>
     <app-route route="{{subroute}}" pattern="/:courseid" data="{{routeCourseData}}"></app-route>
 
+    <!-- TODO: Hide firebase api-key from github-->
     <firebase-app id="firebase" 
       auth-domain="reflect-teacher.firebaseapp.com" 
       database-url="https://reflect-teacher.firebaseio.com/"
       api-key="AIzaSyBfWUy6UaCfw8z1CcAxquAp2r8A6DqN0CQ">
     </firebase-app>
     <firebase-auth id="auth" user="{{user}}" on-double-tap="_checkProgress"></firebase-auth>
-    <firebase-document id="userPresets" path="" data={{presets}}>
-    </firebase-document>
+    <firebase-document id="userPresets" path="" data={{presets}}></firebase-document>
     <firebase-document id="courseData" 
       path="/courses/{{routeCourseData.courseid}}/title" 
       data={{courseTitleRaw}}>
@@ -139,7 +140,7 @@
             <paper-progress id="progress" class="slow" value="100" indeterminate bottom-item></paper-progress>  
           </app-toolbar>
         </app-header>
-<!-- http://jsfiddle.net/jtbowden/ykbgT/?utm_source=website&utm_medium=embed&utm_campaign=ykbgT -->
+<!-- TODO: ?? http://jsfiddle.net/jtbowden/ykbgT/?utm_source=website&utm_medium=embed&utm_campaign=ykbgT -->
         <iron-pages id="pages" selected="[[page]]" attr-for-selected="name" fallback-selection="error" role="main">
           <welcome-view name="welcome"></welcome-view>
           <class-view route={{subroute}} name="class"></class-view>
@@ -161,37 +162,41 @@
 
       static get properties() {
         return {
+          //Hold the page in data
           page: {
             type: String,
             reflectToAttribute: true,
             observer: '_pageChanged',
           },
+          //needs to be initialized as string to keep from showing undefined
+          courseTitle: {
+            type:String 
+          },
+          //holds the element (not string) that has the current collapsable sub-menu open
           activeCollapse:{
             type:String,
             value:""
           },
+          //the list of all the collapsable sub-menu items
           collapseList:{
             type: Object,
             value:{}
           },
-          routeCourseData:{
-            type: Object
-          },
-          courseTitle: {
-            type:String 
-          },
+          //firebase list of all the courses that the user is managing
           userCourses:{
             type:Array,
             value:[],
           },
+          //used for creating users, may be used for individual settings in the future
           presets: Object,
+          //is programatically built depending on iron-pages selection
           rootPattern: String,
-          routeData: Object,
-          subroute: String,
+          //user Object needs to notify when changed
           user: {
             type: Object,
             notify: true
           },
+          //used for loading indicator
           dataReady:{
             type: Boolean,
             value: false
@@ -213,6 +218,7 @@
         // https://www.polymer-project.org/2.0/docs/upgrade#urls-in-templates
         this.rootPattern = (new URL(this.rootPath)).pathname;
       }
+      //TODO: check if this is actually being used
       _dataReadyListner(e){
         if(e.detail.ready){
           this.$.progress.indeterminate = false
@@ -220,6 +226,7 @@
           this.$.progress.indeterminate = true
         }
       }
+      //when a new course is selected, also activate the new collapse sub-menu
       _collapseCheck(e){
         if(e.path[0].id){
           this.collapseList[e.path[0].id] = e.path[0];
@@ -247,8 +254,9 @@
           if(this.activeCollapse){
             this.activeCollapse.hide();
           }
+          //TODO: This code needs to be checked over (I think it had to do with problem solving duplicate values)
           if(!this.collapseList[this.routeCourseData.courseid]){
-            //eventually reset the polyfire here.
+            //eventually reset the firebase code here.
             this.$.courses.destroy().then(()=>{
             this.$.courses.orderByChild="added";
             this.$.courses.orderByChild="title";
@@ -280,14 +288,15 @@
         }
 
         // If no page was found in the route data, page will be an empty string.
-        // Deault to 'view1' in that case.
+        // Deault to 'welcome' in that case.
         this.page = page || 'welcome';
 
-        // Close a non-persistent drawer when the page & route are changed.
+        // Closed a non-persistent drawer when the page & route are changed.
         if (!this.$.drawer.persistent) {
           this.$.drawer.close();
         }
       }
+      //watch for user data to change, unregistered users should be re-directed
       _userDataChanged(user) {
         if (user) {  //only update state if user is logged-in
           this.$.progress.indeterminate = true;
@@ -313,9 +322,11 @@
           this._showPage404.bind(this),
           true);      
       }
+      //TODO: In the menu, we should allow user to explore the dropdown menus to avoid unwanted page-loads
       _selectCourse(e){
         
       }
+      //TODO: why is this called on a double-tap event?
       _checkProgress(){
         if(this.$.auth.statusKnown){
           this.$.progress.indeterminate = false;

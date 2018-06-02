@@ -156,9 +156,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               val: this._getVal(key)
             })
           }
-          this.studentList.forEach((e)=>{
+          // TODO: unfinished
+          this.studentList.forEach((e,i,a)=>{
             if(e.$key == this.routeData.studentid){
-              this.studentName = e.userData.studentName;
+              var next = ""
+              var prev = ""
+              if(a.length()>i++){
+                next = a[i+1].$key
+              }else{
+                next = a[0].$key
+              }
+              if(i>0){
+                prev = a[i-1].$key
+              }else{
+                prev = a[a.length()-1].$key
+              }
+              
+              this.studentData = {
+                name: e.userData.studentName,
+                $key: this.routeData.studentid,
+                nextid: next,
+                previd: prev
+              }
             }
           })
           //this.studentName = this.studentList[this.routeData.studentid].userData.studentName

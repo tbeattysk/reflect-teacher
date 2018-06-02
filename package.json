@@ -11,5 +11,9 @@
     "lint:javascript": "eslint . --ext js,html --ignore-path .gitignore",
     "test": "polymer test",
     "test:integration": "polymer build # test that psk builds without error with the CLI"
+  },
+  "dependencies": {
+    "firebase-admin": "^5.6.0",
+    "firebase-functions": "^0.7.5"
   }
 }
